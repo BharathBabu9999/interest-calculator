@@ -1,71 +1,78 @@
-import { useState } from 'react';
-import type { Transaction, Client } from './types';
-import { formatDateForInput } from './utils/dateUtils';
-import TransactionForm from './components/TransactionForm';
-import TransactionTable from './components/TransactionTable';
-import Summary from './components/Summary';
-import AdBanner from './components/AdBanner';
-import { exportToPDF, exportToCSV, importFromCSV } from './utils/export';
+import { useState } from "react";
+import type { Transaction, Client } from "./types";
+import { formatDateForInput } from "./utils/dateUtils";
+import TransactionForm from "./components/TransactionForm";
+import TransactionTable from "./components/TransactionTable";
+import Summary from "./components/Summary";
+import AdBanner from "./components/AdBanner";
+import { exportToPDF, exportToCSV, importFromCSV } from "./utils/export";
 
 // Example/sample transactions
 const sampleTransactions: Transaction[] = [
   {
-    id: '1',
+    id: "1",
     date: new Date(2020, 0, 1), // Jan 1, 2020
     amount: 1000,
     interestRate: 2,
-    type: 'loan',
-    notes: 'Initial loan',
+    type: "loan",
+    notes: "Initial loan",
   },
   {
-    id: '2',
+    id: "2",
     date: new Date(2020, 0, 21), // Jan 21, 2020
     amount: 100,
     interestRate: 2,
-    type: 'loan',
-    notes: 'Additional loan',
+    type: "loan",
+    notes: "Additional loan",
   },
   {
-    id: '3',
+    id: "3",
     date: new Date(2020, 8, 16), // Sep 16, 2020
     amount: 1000,
     interestRate: 2,
-    type: 'loan',
-    notes: 'Third loan',
+    type: "loan",
+    notes: "Third loan",
   },
   {
-    id: '4',
+    id: "4",
     date: new Date(2020, 4, 1), // May 1, 2020
     amount: 100,
     interestRate: 2,
-    type: 'repayment',
-    notes: 'First payment',
+    type: "repayment",
+    notes: "First payment",
   },
   {
-    id: '5',
+    id: "5",
     date: new Date(2021, 0, 21), // Jan 21, 2021
     amount: 900,
     interestRate: 2,
-    type: 'repayment',
-    notes: 'Second payment',
+    type: "repayment",
+    notes: "Second payment",
   },
   {
-    id: '6',
+    id: "6",
     date: new Date(2022, 8, 16), // Sep 16, 2022
     amount: 1000,
     interestRate: 2,
-    type: 'repayment',
-    notes: 'Third payment',
+    type: "repayment",
+    notes: "Third payment",
   },
 ];
 
 function App() {
-  const [client, setClient] = useState<Client>({ name: 'John Doe', id: 'CLIENT-001', currency: 'INR' });
+  const [client, setClient] = useState<Client>({
+    name: "John Doe",
+    id: "CLIENT-001",
+    currency: "INR",
+  });
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
-  const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
-  const [sortOrder, setSortOrder] = useState<'chronological' | 'entry'>('chronological');
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(sampleTransactions);
+  const [sortOrder, setSortOrder] = useState<"chronological" | "entry">(
+    "chronological"
+  );
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
-  const [newBulkRate, setNewBulkRate] = useState('');
+  const [newBulkRate, setNewBulkRate] = useState("");
 
   const handleAddTransaction = (transaction: Transaction) => {
     setTransactions([...transactions, transaction]);
@@ -77,7 +84,9 @@ function App() {
 
   const handleUpdateTransaction = (updatedTransaction: Transaction) => {
     setTransactions(
-      transactions.map((t) => (t.id === updatedTransaction.id ? updatedTransaction : t))
+      transactions.map((t) =>
+        t.id === updatedTransaction.id ? updatedTransaction : t
+      )
     );
   };
 
@@ -106,12 +115,14 @@ function App() {
       (importedTransactions) => {
         setTransactions([...transactions, ...importedTransactions]);
         // Reset the input
-        event.target.value = '';
-        alert(`Successfully imported ${importedTransactions.length} transactions!`);
+        event.target.value = "";
+        alert(
+          `Successfully imported ${importedTransactions.length} transactions!`
+        );
       },
       (error) => {
         alert(`Import failed: ${error}`);
-        event.target.value = '';
+        event.target.value = "";
       }
     );
   };
@@ -119,7 +130,7 @@ function App() {
   const handleBulkUpdateRate = () => {
     const rate = parseFloat(newBulkRate);
     if (isNaN(rate) || rate < 0) {
-      alert('Please enter a valid interest rate (0 or greater)');
+      alert("Please enter a valid interest rate (0 or greater)");
       return;
     }
 
@@ -130,16 +141,22 @@ function App() {
 
     setTransactions(updatedTransactions);
     setShowBulkUpdateModal(false);
-    setNewBulkRate('');
-    alert(`Updated interest rate to ${rate}% for all ${transactions.length} transactions`);
+    setNewBulkRate("");
+    alert(
+      `Updated interest rate to ${rate}% for all ${transactions.length} transactions`
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Interest Calculator</h1>
-          <p className="text-gray-600">Private financing loan and repayment tracker</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Interest Calculator
+          </h1>
+          <p className="text-gray-600">
+            Private financing loan and repayment tracker
+          </p>
         </div>
 
         {/* Top Banner Ad */}
@@ -177,7 +194,9 @@ function App() {
               </label>
               <select
                 value={client.currency}
-                onChange={(e) => setClient({ ...client, currency: e.target.value })}
+                onChange={(e) =>
+                  setClient({ ...client, currency: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="INR">INR (₹)</option>
@@ -204,7 +223,11 @@ function App() {
         </div>
 
         {/* Summary */}
-        <Summary transactions={transactions} asOfDate={asOfDate} currency={client.currency} />
+        <Summary
+          transactions={transactions}
+          asOfDate={asOfDate}
+          currency={client.currency}
+        />
 
         {/* Middle Ad */}
         <AdBanner slot="0987654321" className="mb-6" format="horizontal" />
@@ -213,36 +236,46 @@ function App() {
         <TransactionForm onAddTransaction={handleAddTransaction} />
 
         {/* Controls */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex gap-2">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+          <div className="flex flex-col gap-3">
+            {/* Sort and Action Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
-                onClick={() => setSortOrder(sortOrder === 'chronological' ? 'entry' : 'chronological')}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                onClick={() =>
+                  setSortOrder(
+                    sortOrder === "chronological" ? "entry" : "chronological"
+                  )
+                }
+                className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition whitespace-nowrap"
               >
-                Sort: {sortOrder === 'chronological' ? 'Chronological' : 'Entry Order'}
+                Sort:{" "}
+                {sortOrder === "chronological"
+                  ? "Chronological"
+                  : "Entry Order"}
               </button>
               <button
                 onClick={() => setShowBulkUpdateModal(true)}
-                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition"
+                className="px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition whitespace-nowrap"
               >
                 Update All Rates
               </button>
               <button
                 onClick={handleClearAll}
-                className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition"
+                className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition whitespace-nowrap"
               >
                 Clear All
               </button>
               <button
                 onClick={handleLoadExample}
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition"
+                className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition whitespace-nowrap"
               >
                 Load Example
               </button>
             </div>
-            <div className="flex gap-2">
-              <label className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer">
+
+            {/* Import/Export Buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              <label className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer text-center whitespace-nowrap">
                 Import CSV
                 <input
                   type="file"
@@ -253,13 +286,13 @@ function App() {
               </label>
               <button
                 onClick={handleExportPDF}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition whitespace-nowrap"
               >
                 Export PDF
               </button>
               <button
                 onClick={handleExportCSV}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition whitespace-nowrap"
               >
                 Export CSV
               </button>
@@ -284,9 +317,12 @@ function App() {
         {showBulkUpdateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-semibold mb-4">Update All Interest Rates</h3>
+              <h3 className="text-xl font-semibold mb-4">
+                Update All Interest Rates
+              </h3>
               <p className="text-gray-600 mb-4">
-                This will change the interest rate for all {transactions.length} transactions.
+                This will change the interest rate for all {transactions.length}{" "}
+                transactions.
               </p>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -306,7 +342,7 @@ function App() {
                 <button
                   onClick={() => {
                     setShowBulkUpdateModal(false);
-                    setNewBulkRate('');
+                    setNewBulkRate("");
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
                 >
