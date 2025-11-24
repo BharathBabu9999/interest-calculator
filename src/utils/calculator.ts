@@ -91,37 +91,6 @@ export function calculateCurrentValue(
 }
 
 /**
- * Calculate months between two dates
- * For same day of month (e.g., 19th to 19th), returns whole months
- * Otherwise calculates fractional months
- */
-function getMonthsBetween(fromDate: Date, toDate: Date): number {
-  const yearDiff = toDate.getFullYear() - fromDate.getFullYear();
-  const monthDiff = toDate.getMonth() - fromDate.getMonth();
-  const dayDiff = toDate.getDate() - fromDate.getDate();
-  
-  let months = yearDiff * 12 + monthDiff;
-  
-  // If same day of month (e.g., anniversary dates), return exact whole months
-  if (dayDiff === 0) {
-    return months;
-  }
-  
-  // Add fractional month for day difference
-  if (dayDiff > 0) {
-    const daysInFromMonth = getExactDaysInMonth(fromDate);
-    months += dayDiff / daysInFromMonth;
-  } else if (dayDiff < 0) {
-    months -= 1;
-    const prevMonth = new Date(toDate.getFullYear(), toDate.getMonth() - 1, 1);
-    const daysInPrevMonth = getExactDaysInMonth(prevMonth);
-    months += (daysInPrevMonth + dayDiff) / daysInPrevMonth;
-  }
-  
-  return months;
-}
-
-/**
  * Calculate total outstanding balance (loans - repayments)
  */
 export function calculateTotalBalance(
