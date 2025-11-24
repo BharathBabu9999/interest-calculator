@@ -63,6 +63,8 @@ function App() {
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
   const [sortOrder, setSortOrder] = useState<'chronological' | 'entry'>('chronological');
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
+  const [newBulkRate, setNewBulkRate] = useState('');
 
   const handleAddTransaction = (transaction: Transaction) => {
     setTransactions([...transactions, transaction]);
@@ -111,6 +113,24 @@ function App() {
         event.target.value = '';
       }
     );
+  };
+
+  const handleBulkUpdateRate = () => {
+    const rate = parseFloat(newBulkRate);
+    if (isNaN(rate) || rate < 0) {
+      alert('Please enter a valid interest rate (0 or greater)');
+      return;
+    }
+
+    const updatedTransactions = transactions.map((t) => ({
+      ...t,
+      interestRate: rate,
+    }));
+
+    setTransactions(updatedTransactions);
+    setShowBulkUpdateModal(false);
+    setNewBulkRate('');
+    alert(`Updated interest rate to ${rate}% for all ${transactions.length} transactions`);
   };
 
   return (
@@ -196,6 +216,12 @@ function App() {
                 Sort: {sortOrder === 'chronological' ? 'Chronological' : 'Entry Order'}
               </button>
               <button
+                onClick={() => setShowBulkUpdateModal(true)}
+                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition"
+              >
+                Update All Rates
+              </button>
+              <button
                 onClick={handleClearAll}
                 className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition"
               >
@@ -243,6 +269,49 @@ function App() {
           onDeleteTransaction={handleDeleteTransaction}
           onUpdateTransaction={handleUpdateTransaction}
         />
+
+        {/* Bulk Update Modal */}
+        {showBulkUpdateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold mb-4">Update All Interest Rates</h3>
+              <p className="text-gray-600 mb-4">
+                This will change the interest rate for all {transactions.length} transactions.
+              </p>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Interest Rate (% per month)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newBulkRate}
+                  onChange={(e) => setNewBulkRate(e.target.value)}
+                  placeholder="e.g., 2.5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowBulkUpdateModal(false);
+                    setNewBulkRate('');
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkUpdateRate}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                >
+                  Update All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

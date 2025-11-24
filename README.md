@@ -21,6 +21,7 @@ A comprehensive React-based interest calculator designed for managing private fi
 - **Client Management**: Track client name and ID with currency selection
 - **Collapsible Form**: Clean accordion-style "Add Transaction" form to reduce clutter
 - **Inline Editing**: Edit existing transactions directly in the table
+- **Bulk Rate Update**: Change interest rates for all transactions at once with a single click
 - **DD/MM/YYYY Format**: Consistent date format throughout the application
 - **No Spinner Arrows**: Clean number inputs without increment/decrement controls
 - **Whole Number Summary**: Summary displays rounded values for easy reading
@@ -163,6 +164,13 @@ interest-calc/
 - Modify values inline
 - Click "Save" to confirm or "Cancel" to discard changes
 
+### Bulk Updating Interest Rates
+
+1. Click "Update All Rates" button in the controls section
+2. Enter the new interest rate (% per month) in the modal dialog
+3. Click "Update All" to apply the rate to all transactions
+4. Confirmation message shows how many transactions were updated
+
 ### Importing Data
 
 1. Click "Import from CSV"
@@ -264,6 +272,7 @@ Feel free to fork, modify, and enhance the calculator for your specific needs. K
 - Multiple client management
 - Payment schedules and projections
 - Custom compounding frequencies
+- Selective bulk updates (update rates for specific date ranges or transaction types)
 - Email/SMS notifications for payment reminders
 - Multi-language support
 
