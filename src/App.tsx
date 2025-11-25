@@ -5,7 +5,12 @@ import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
 import AdBanner from "./components/AdBanner";
-import { IntroSection, HowToUseSection, FAQSection, Footer } from "./components/ContentSections";
+import {
+  IntroSection,
+  HowToUseSection,
+  FAQSection,
+  Footer,
+} from "./components/ContentSections";
 import { exportToPDF, exportToCSV, importFromCSV } from "./utils/export";
 
 // Example/sample transactions
@@ -304,9 +309,6 @@ function App() {
           </div>
         </div>
 
-        {/* Bottom Ad */}
-        <AdBanner slot="1122334455" className="mb-6" format="rectangle" />
-
         {/* Transactions Table */}
         <TransactionTable
           transactions={transactions}
@@ -362,10 +364,13 @@ function App() {
             </div>
           </div>
         )}
-        
+
         {/* How to Use Section */}
         <HowToUseSection />
 
+        {/* Bottom Ad */}
+        <AdBanner slot="1122334455" className="mb-6" format="rectangle" />
+        
         {/* FAQ Section */}
         <FAQSection />
 
