@@ -5,6 +5,7 @@ import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
 import AdBanner from "./components/AdBanner";
+import { IntroSection, HowToUseSection, FAQSection, Footer } from "./components/ContentSections";
 import { exportToPDF, exportToCSV, importFromCSV } from "./utils/export";
 
 // Example/sample transactions
@@ -158,6 +159,9 @@ function App() {
             Private financing loan and repayment tracker
           </p>
         </div>
+
+        {/* Introduction Section */}
+        <IntroSection />
 
         {/* Top Banner Ad */}
         <AdBanner slot="1234567890" className="mb-6" />
@@ -358,6 +362,15 @@ function App() {
             </div>
           </div>
         )}
+        
+        {/* How to Use Section */}
+        <HowToUseSection />
+
+        {/* FAQ Section */}
+        <FAQSection />
+
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );
