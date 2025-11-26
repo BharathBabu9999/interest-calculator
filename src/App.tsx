@@ -169,7 +169,7 @@ function App() {
         <IntroSection />
 
         {/* Top Banner Ad */}
-        <AdBanner slot="1234567890" className="mb-6" />
+        {/* <AdBanner slot="1234567890" className="mb-6" /> */}
 
         {/* Client Info */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -239,7 +239,7 @@ function App() {
         />
 
         {/* Middle Ad */}
-        <AdBanner slot="0987654321" className="mb-6" format="horizontal" />
+        {/* <AdBanner slot="0987654321" className="mb-6" format="horizontal" /> */}
 
         {/* Transaction Form */}
         <TransactionForm onAddTransaction={handleAddTransaction} />
@@ -369,7 +369,7 @@ function App() {
         <HowToUseSection />
 
         {/* Bottom Ad */}
-        <AdBanner slot="1122334455" className="mb-6" format="rectangle" />
+        {/* <AdBanner slot="1122334455" className="mb-6" format="rectangle" /> */}
         
         {/* FAQ Section */}
         <FAQSection />
