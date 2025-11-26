@@ -4,7 +4,7 @@ import { formatDateForInput } from "./utils/dateUtils";
 import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
-import AdBanner from "./components/AdBanner";
+// import AdBanner from "./components/AdBanner";
 import {
   IntroSection,
   HowToUseSection,
