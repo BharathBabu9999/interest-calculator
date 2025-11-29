@@ -4,7 +4,8 @@ import { formatDateForInput } from "./utils/dateUtils";
 import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
-// import AdBanner from "./components/AdBanner";
+import AdBanner from "./components/AdBanner";
+import PrivacyPolicy from "./components/PrivacyPolicy";
 import {
   IntroSection,
   HowToUseSection,
@@ -165,11 +166,8 @@ function App() {
           </p>
         </div>
 
-        {/* Introduction Section */}
-        <IntroSection />
-
         {/* Top Banner Ad */}
-        {/* <AdBanner slot="1234567890" className="mb-6" /> */}
+        <AdBanner slot="1234567890" className="mb-6" />
 
         {/* Client Info */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -239,7 +237,7 @@ function App() {
         />
 
         {/* Middle Ad */}
-        {/* <AdBanner slot="0987654321" className="mb-6" format="horizontal" /> */}
+        <AdBanner slot="0987654321" className="mb-6" format="horizontal" />
 
         {/* Transaction Form */}
         <TransactionForm onAddTransaction={handleAddTransaction} />
@@ -364,15 +362,19 @@ function App() {
             </div>
           </div>
         )}
-
+        {/* Introduction Section */}
+        <IntroSection />
         {/* How to Use Section */}
         <HowToUseSection />
 
         {/* Bottom Ad */}
-        {/* <AdBanner slot="1122334455" className="mb-6" format="rectangle" /> */}
-        
+        <AdBanner slot="1122334455" className="mb-6" format="rectangle" />
+
         {/* FAQ Section */}
         <FAQSection />
+
+        {/* Privacy Policy */}
+        <PrivacyPolicy />
 
         {/* Footer */}
         <Footer />
