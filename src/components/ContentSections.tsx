@@ -1,7 +1,7 @@
 export function IntroSection() {
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 className="text-2xl font-semibold mb-4">Professional Interest Calculator for Private Lending and Personal Loans</h2>
+      {/* <h2 className="text-2xl font-semibold mb-4">Professional Interest Calculator for Private Lending and Personal Loans</h2>
       
       <p className="text-gray-700 mb-4">
         Managing private loans requires accurate interest calculations to maintain transparency and trust between 
@@ -91,7 +91,7 @@ export function IntroSection() {
         <li><strong>Estate executors</strong> managing outstanding family loans and calculating final settlement amounts</li>
         <li><strong>Real estate investors</strong> who provide seller financing or private mortgages</li>
         <li><strong>Peer-to-peer lenders</strong> tracking returns on multiple loans across different borrowers</li>
-      </ul>
+      </ul> */}
 
       <h3 className="text-xl font-semibold mb-3 mt-6">How Interest Is Calculated: A Three-Part System</h3>
       

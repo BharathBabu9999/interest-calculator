@@ -4,7 +4,6 @@ import { formatDateForInput } from "./utils/dateUtils";
 import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
-import AdBanner from "./components/AdBanner";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import {
   IntroSection,
@@ -166,9 +165,6 @@ function App() {
           </p>
         </div>
 
-        {/* Top Banner Ad */}
-        <AdBanner slot="1234567890" className="mb-6" />
-
         {/* Client Info */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Client Information</h2>
@@ -235,9 +231,6 @@ function App() {
           asOfDate={asOfDate}
           currency={client.currency}
         />
-
-        {/* Middle Ad */}
-        <AdBanner slot="0987654321" className="mb-6" format="horizontal" />
 
         {/* Transaction Form */}
         <TransactionForm onAddTransaction={handleAddTransaction} />
@@ -367,14 +360,10 @@ function App() {
         {/* How to Use Section */}
         <HowToUseSection />
 
-        {/* Bottom Ad */}
-        <AdBanner slot="1122334455" className="mb-6" format="rectangle" />
+
 
         {/* FAQ Section */}
         <FAQSection />
-
-        {/* Privacy Policy */}
-        <PrivacyPolicy />
 
         {/* Footer */}
         <Footer />

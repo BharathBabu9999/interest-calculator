@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import type { Transaction } from '../types';
 import { calculateCurrentValue } from '../utils/calculator';
 import { formatCurrency } from '../utils/currency';
@@ -172,8 +172,8 @@ export default function TransactionTable({
               }
 
               return (
-                <>
-                  <tr key={transaction.id} className="hover:bg-gray-50">
+                <Fragment key={transaction.id}>
+                  <tr className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDateForDisplay(transaction.date)}
                     </td>
@@ -320,7 +320,7 @@ export default function TransactionTable({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>

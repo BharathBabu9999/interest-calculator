@@ -14,8 +14,8 @@ const currencySymbols: Record<string, string> = {
 
 export function formatCurrency(amount: number, currency: string): string {
   const symbol = currencySymbols[currency] || currency;
-  const isWholeNumber = amount === Math.round(amount);
-  return isWholeNumber ? `${symbol}${amount.toFixed(0)}` : `${symbol}${amount.toFixed(2)}`;
+  // Always show 2 decimal places for better precision
+  return `${symbol}${amount.toFixed(2)}`;
 }
 
 export function getCurrencySymbol(currency: string): string {
