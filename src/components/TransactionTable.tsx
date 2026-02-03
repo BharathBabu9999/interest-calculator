@@ -315,6 +315,39 @@ export default function TransactionTable({
                                         </td>
                                       </tr>
                                     ))}
+                                    {/* Remaining Months Row */}
+                                    {breakdown.duration.months > 0 && (() => {
+                                      const lastStep = breakdown.compoundingSteps[breakdown.compoundingSteps.length - 1];
+                                      const principal = lastStep ? lastStep.principalAfter : breakdown.originalAmount;
+                                      const monthEndDate = new Date(asOfDate);
+                                      monthEndDate.setDate(monthEndDate.getDate() - breakdown.duration.days);
+                                      
+                                      return (
+                                        <tr className="bg-gray-50">
+                                          <td className="px-3 py-2 italic text-gray-500">Months ({breakdown.duration.months})</td>
+                                          <td className="px-3 py-2 italic text-gray-500">{formatDateForDisplay(monthEndDate)}</td>
+                                          <td className="px-3 py-2 text-gray-500">{formatCurrency(principal, currency)}</td>
+                                          <td className="px-3 py-2 text-green-600 font-medium">+{formatCurrency(breakdown.monthsInterest, currency)}</td>
+                                          <td className="px-3 py-2 text-gray-700">{formatCurrency(principal + breakdown.monthsInterest, currency)}</td>
+                                        </tr>
+                                      );
+                                    })()}
+                                    {/* Remaining Days Row */}
+                                    {breakdown.duration.days > 0 && (() => {
+                                      const lastStep = breakdown.compoundingSteps[breakdown.compoundingSteps.length - 1];
+                                      const principal = lastStep ? lastStep.principalAfter : breakdown.originalAmount;
+                                      const runningPrincipal = principal + breakdown.monthsInterest;
+                                      
+                                      return (
+                                        <tr className="bg-gray-50">
+                                          <td className="px-3 py-2 italic text-gray-500">Days ({breakdown.duration.days})</td>
+                                          <td className="px-3 py-2 italic text-gray-500">{formatDateForDisplay(asOfDate)}</td>
+                                          <td className="px-3 py-2 text-gray-500">{formatCurrency(runningPrincipal, currency)}</td>
+                                          <td className="px-3 py-2 text-green-600 font-medium">+{formatCurrency(breakdown.daysInterest, currency)}</td>
+                                          <td className="px-3 py-2 font-bold text-gray-900">{formatCurrency(breakdown.currentValue, currency)}</td>
+                                        </tr>
+                                      );
+                                    })()}
                                   </tbody>
                                 </table>
                               </div>
