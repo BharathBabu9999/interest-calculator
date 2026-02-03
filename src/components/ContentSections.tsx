@@ -4,7 +4,6 @@ export function IntroSection() {
   return (
     <Accordion 
       title="How Interest Is Calculated: A Three-Part System"
-      defaultOpen={true}
     >
       <p className="text-gray-700 mb-4">
         Our calculator uses a sophisticated three-part calculation method to ensure accuracy and fairness:
@@ -71,7 +70,7 @@ export function IntroSection() {
 
 export function HowToUseSection() {
   return (
-    <Accordion title="How to Use This Calculator">
+    <Accordion title="How to Use This Calculator" className="mt-8">
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-semibold mb-2 text-blue-600">1. Add Transactions</h3>

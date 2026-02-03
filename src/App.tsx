@@ -73,7 +73,7 @@ function App() {
   });
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [transactions, setTransactions] =
-    useState<Transaction[]>(sampleTransactions);
+    useState<Transaction[]>([]);
   const [sortOrder, setSortOrder] = useState<"chronological" | "entry">(
     "chronological"
   );
@@ -355,10 +355,10 @@ function App() {
             </div>
           </div>
         )}
-        {/* Introduction Section */}
-        <IntroSection />
         {/* How to Use Section */}
         <HowToUseSection />
+        {/* Introduction Section */}
+        <IntroSection />
 
 
 

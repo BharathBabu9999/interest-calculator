@@ -21,7 +21,7 @@ export default function TransactionTable({
   onDeleteTransaction,
   onUpdateTransaction,
 }: TransactionTableProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Transaction | null>(null);
 
@@ -31,7 +31,11 @@ export default function TransactionTable({
       : transactions;
 
   const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
+    setExpandedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(tid => tid !== id) 
+        : [...prev, id]
+    );
   };
 
   const startEdit = (transaction: Transaction) => {
@@ -92,7 +96,7 @@ export default function TransactionTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedTransactions.map((transaction) => {
               const breakdown = calculateCurrentValue(transaction, asOfDate);
-              const isExpanded = expandedId === transaction.id;
+              const isExpanded = expandedIds.includes(transaction.id);
               const isEditing = editingId === transaction.id;
 
               if (isEditing && editForm) {
