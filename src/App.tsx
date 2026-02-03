@@ -365,6 +365,9 @@ function App() {
         {/* FAQ Section */}
         <FAQSection />
 
+        {/* Privacy Policy */}
+        <PrivacyPolicy />
+
         {/* Footer */}
         <Footer />
       </div>

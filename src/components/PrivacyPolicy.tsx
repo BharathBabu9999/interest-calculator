@@ -1,7 +1,9 @@
+import Accordion from './Accordion';
+
 export default function PrivacyPolicy() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6" id="privacy">
-      <h2 className="text-2xl font-semibold mb-4">Privacy Policy</h2>
+    <Accordion title="Privacy Policy">
+      <div id="privacy">
       
       <p className="text-gray-700 mb-4">
         <strong>Last Updated:</strong> November 29, 2025
@@ -80,6 +82,7 @@ export default function PrivacyPolicy() {
       <p className="text-sm text-gray-500 mt-6">
         By using this Interest Calculator, you acknowledge that you have read and understood this Privacy Policy.
       </p>
-    </div>
+      </div>
+    </Accordion>
   );
 }
