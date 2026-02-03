@@ -25,7 +25,7 @@ export default function Summary({ transactions, asOfDate, currency }: SummaryPro
         <h3 className="text-sm font-medium text-gray-500 mb-2">
           Total Repayments (Current Value)
         </h3>
-        <p className="text-3xl font-bold text-red-600">{formatCurrency(Math.round(totalRepayments), currency)}</p>
+        <p className="text-3xl font-bold text-amber-600">{formatCurrency(Math.round(totalRepayments), currency)}</p>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">

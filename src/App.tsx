@@ -236,66 +236,68 @@ function App() {
         <TransactionForm onAddTransaction={handleAddTransaction} />
 
         {/* Controls */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
-          <div className="flex flex-col gap-3">
-            {/* Sort and Action Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
+            
+            {/* View & Manage */}
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
               <button
                 onClick={() =>
                   setSortOrder(
                     sortOrder === "chronological" ? "entry" : "chronological"
                   )
                 }
-                className="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition whitespace-nowrap"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
               >
-                Sort:{" "}
-                {sortOrder === "chronological"
-                  ? "Chronological"
-                  : "Entry Order"}
+                <svg className="w-4 h-4 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+                {sortOrder === "chronological" ? "Sort: Date" : "Sort: Entry"}
               </button>
+
               <button
                 onClick={() => setShowBulkUpdateModal(true)}
-                className="px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition whitespace-nowrap"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
               >
-                Update All Rates
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition whitespace-nowrap"
-              >
-                Clear All
-              </button>
-              <button
-                onClick={handleLoadExample}
-                className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition whitespace-nowrap"
-              >
-                Load Example
+                <svg className="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Update Rates
               </button>
             </div>
 
-            {/* Import/Export Buttons */}
-            <div className="grid grid-cols-3 gap-2">
-              <label className="px-3 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition cursor-pointer text-center whitespace-nowrap">
-                Import CSV
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleImportCSV}
-                  className="hidden"
-                />
-              </label>
-              <button
-                onClick={handleExportPDF}
-                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition whitespace-nowrap"
-              >
-                Export PDF
-              </button>
-              <button
-                onClick={handleExportCSV}
-                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition whitespace-nowrap"
-              >
-                Export CSV
-              </button>
+            {/* Actions Toolbar */}
+            <div className="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
+               <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                  <label className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm cursor-pointer transition-all">
+                    <span>Import</span>
+                    <input type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
+                  </label>
+                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                  <button onClick={handleExportPDF} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                    PDF
+                  </button>
+                  <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                  <button onClick={handleExportCSV} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                    CSV
+                  </button>
+               </div>
+
+               <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
+
+               <button
+                  onClick={handleLoadExample}
+                  className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 bg-white hover:bg-blue-50 border border-transparent hover:border-blue-100 rounded-lg transition-colors"
+                >
+                  Load Example
+               </button>
+               
+               <button
+                onClick={handleClearAll}
+                className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-transparent hover:border-red-100 rounded-lg transition-colors"
+               >
+                Clear All
+               </button>
             </div>
           </div>
         </div>
