@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime
+from datetime import date as Date, datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -52,7 +52,7 @@ class ClientRead(BaseModel):
 # ── Transactions ──────────────────────────────────────────────────────────────
 
 class TransactionCreate(BaseModel):
-    date: date
+    date: Date
     amount: float
     interest_rate: float
     type: Literal["loan", "repayment"]
@@ -74,7 +74,7 @@ class TransactionCreate(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
-    date: Optional[date] = None
+    date: Optional[Date] = None
     amount: Optional[float] = None
     interest_rate: Optional[float] = None
     type: Optional[Literal["loan", "repayment"]] = None
@@ -84,7 +84,7 @@ class TransactionUpdate(BaseModel):
 class TransactionRead(BaseModel):
     id: uuid.UUID
     client_id: uuid.UUID
-    date: date
+    date: Date
     amount: float
     interest_rate: float
     type: str
