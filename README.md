@@ -1,6 +1,6 @@
 # Private Financing Interest Calculator
 
-A full-stack React + FastAPI application for managing private lending — track loans, repayments, and compound interest across multiple clients, with per-user accounts and a PostgreSQL database.
+A full-stack React + FastAPI application for managing private financing — track lending, borrowing, and compound interest across multiple clients, with per-user accounts, a PostgreSQL database, and a dark/light theme.
 
 ## 🌟 Features
 
@@ -16,11 +16,20 @@ A full-stack React + FastAPI application for managing private lending — track 
 - **Full CRUD** — create, edit, and delete clients from the dashboard
 
 ### Transaction Tracking (per client)
-- **Dual transaction types** — loans (money given) and repayments (money received)
+- **Dual transaction types** — **Lend** (money given out) and **Borrow** (money received)
 - **Variable interest rates** — each transaction has its own monthly rate
 - **CSV import/export** — bulk import transactions from spreadsheets; export to CSV or PDF
 - **Inline editing** — edit any transaction directly in the table
 - **Bulk rate update** — change the interest rate for all transactions at once
+
+### Portfolio Summary
+- **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view
+- **As-of-date filter** — recalculate all balances as of any date
+- **Per-currency grouping** — grand totals grouped by currency
+- **Click-through** — click any client row to jump straight to their transaction page
+
+### UI & Theme
+- **Dark / light mode** — toggle at the top of every page; preference saved to localStorage
 
 ### Interest Calculation Engine
 - **Anniversary-based annual compounding** — interest compounds on each 12-month anniversary of the transaction, not at calendar year-end
@@ -136,7 +145,9 @@ The app runs at **http://localhost:5173**.
 1. Open `http://localhost:5173` → click **"Create one"** to register
 2. On the dashboard, click **"+ Add Client"** — enter a name and currency
 3. Click the client card → you're in the transaction view
-4. Add loans and repayments; interest is calculated live
+4. Add **Lend** or **Borrow** transactions; interest is calculated live
+5. Click **"Portfolio Summary"** in the nav to see totals across all clients
+6. Use the **sun/moon icon** in the top-right to toggle dark / light mode
 
 ---
 
@@ -165,16 +176,22 @@ interest-calc/
     │   ├── clients.ts              # Client CRUD
     │   └── transactions.ts         # Transaction CRUD
     ├── contexts/
-    │   └── AuthContext.tsx         # useAuth() hook, PrivateRoute
+    │   ├── AuthContext.tsx         # useAuth() hook, PrivateRoute
+    │   └── ThemeContext.tsx        # useTheme() hook, ThemeProvider, localStorage persistence
     ├── pages/
     │   ├── LoginPage.tsx
     │   ├── RegisterPage.tsx
     │   ├── DashboardPage.tsx       # Client list
-    │   └── ClientPage.tsx          # Transactions view for a single client
+    │   ├── ClientPage.tsx          # Transactions view for a single client
+    │   └── SummaryPage.tsx         # Portfolio summary across all clients
     ├── components/
     │   ├── TransactionForm.tsx
     │   ├── TransactionTable.tsx
-    │   └── Summary.tsx
+    │   ├── Summary.tsx
+    │   ├── ThemeToggle.tsx         # Sun/moon icon button
+    │   ├── Accordion.tsx
+    │   ├── ContentSections.tsx
+    │   └── PrivacyPolicy.tsx
     ├── utils/
     │   ├── calculator.ts           # Interest calculation engine
     │   ├── currency.ts
@@ -194,6 +211,7 @@ interest-calc/
 | `/register` | Create account | No |
 | `/` | Dashboard — client list | Yes |
 | `/clients/:id` | Transactions for a client | Yes |
+| `/summary` | Portfolio summary across all clients | Yes |
 
 ---
 
@@ -228,14 +246,14 @@ $$\text{New Principal} = \text{Old Principal} \times (1 + \text{rate} \times 12)
 
 ```
 Date,Amount,Interest Rate,Type,Notes
-19/03/2019,450000,1.5,loan,Initial funding
-10/04/2021,100000,2,loan,
-15/06/2024,50000,1.8,repayment,Partial payment
+19/03/2019,450000,1.5,lend,Initial funding
+10/04/2021,100000,2,lend,
+15/06/2024,50000,1.8,borrow,Partial payment
 ```
 
 - **Date**: DD/MM/YYYY (also accepts YYYY-MM-DD)
 - **Interest Rate**: monthly percentage (e.g. `2` = 2% per month)
-- **Type**: `loan` or `repayment`
+- **Type**: `lend` or `borrow`
 
 ---
 
