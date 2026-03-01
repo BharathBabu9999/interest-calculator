@@ -1,0 +1,343 @@
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { clientsApi, type ClientRead } from "../api/clients";
+import { transactionsApi, type TransactionRead } from "../api/transactions";
+import { calculateTotalBalance } from "../utils/calculator";
+import { formatCurrency } from "../utils/currency";
+import { formatDateForInput } from "../utils/dateUtils";
+import { useAuth } from "../contexts/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
+import type { Transaction } from "../types";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function apiToLocal(tx: TransactionRead): Transaction {
+  return {
+    id: tx.id,
+    date: new Date(`${tx.date}T00:00:00`),
+    amount: tx.amount,
+    interestRate: tx.interest_rate,
+    type: tx.type,
+    notes: tx.notes ?? "",
+  };
+}
+
+interface ClientSummary {
+  client: ClientRead;
+  totalLoans: number;
+  totalRepayments: number;
+  netBalance: number;
+  txCount: number;
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
+
+export default function SummaryPage() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [asOfDate, setAsOfDate] = useState<Date>(new Date());
+  const [summaries, setSummaries] = useState<ClientSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const clients = await clientsApi.list();
+      if (clients.length === 0) {
+        setSummaries([]);
+        return;
+      }
+
+      // Fetch all clients' transactions in parallel
+      const txLists = await Promise.all(
+        clients.map((c) => transactionsApi.list(c.id))
+      );
+
+      const result: ClientSummary[] = clients.map((client, i) => {
+        const transactions = txLists[i].map(apiToLocal);
+        const { totalLoans, totalRepayments, netBalance } =
+          calculateTotalBalance(transactions, asOfDate);
+        return {
+          client,
+          totalLoans,
+          totalRepayments,
+          netBalance,
+          txCount: transactions.length,
+        };
+      });
+
+      setSummaries(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data");
+    } finally {
+      setLoading(false);
+    }
+  }, [asOfDate]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  // ── grand totals grouped by currency ────────────────────────────────────────
+
+  const totalsMap = summaries.reduce<
+    Record<string, { loans: number; repayments: number; net: number }>
+  >((acc, { client, totalLoans, totalRepayments, netBalance }) => {
+    const cur = client.currency;
+    if (!acc[cur]) acc[cur] = { loans: 0, repayments: 0, net: 0 };
+    acc[cur].loans += totalLoans;
+    acc[cur].repayments += totalRepayments;
+    acc[cur].net += netBalance;
+    return acc;
+  }, {});
+
+  const grandTotals = Object.entries(totalsMap).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+
+  // ── render ───────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
+      {/* Nav */}
+      <header className="bg-white dark:bg-slate-900/80 backdrop-blur border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link
+              to="/"
+              className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white text-sm transition-colors"
+            >
+              ← Dashboard
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link
+                to="/"
+                className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Clients
+              </Link>
+              <span className="text-sm font-semibold text-blue-600 border-b-2 border-blue-600 pb-0.5">
+                Portfolio Summary
+              </span>
+            </nav>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-gray-500 dark:text-slate-400 text-sm hidden sm:block">
+              {user?.email}
+            </span>
+            <ThemeToggle />
+            <button
+              onClick={logout}
+              className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Title + date picker */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Portfolio Summary
+            </h1>
+            <p className="text-gray-500 dark:text-slate-400 mt-1 text-sm">
+              Net financial position across all clients
+            </p>
+          </div>
+          <div className="shrink-0">
+            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+              As of Date
+            </label>
+            <input
+              type="date"
+              value={formatDateForInput(asOfDate)}
+              onChange={(e) =>
+                setAsOfDate(new Date(e.target.value + "T00:00:00"))
+              }
+              className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl px-4 py-3 mb-6 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Grand total cards */}
+        {!loading && grandTotals.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {grandTotals.map(([currency, totals]) => (
+              <div
+                key={currency}
+                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+                    Grand Total
+                  </span>
+                  <span className="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
+                    {currency}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
+                    <span>Total Loans</span>
+                    <span className="font-medium text-gray-800 dark:text-slate-200">
+                      {formatCurrency(totals.loans, currency)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
+                    <span>Total Repaid</span>
+                    <span className="font-medium text-gray-800 dark:text-slate-200">
+                      {formatCurrency(totals.repayments, currency)}
+                    </span>
+                  </div>
+                  <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between">
+                    <span className="font-semibold text-gray-700 dark:text-slate-300">
+                      Net Balance
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${
+                        totals.net >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(totals.net, currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 animate-pulse"
+              >
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-100 dark:bg-slate-700 rounded w-1/4" />
+                  <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded w-1/6" />
+                </div>
+                <div className="h-4 bg-gray-100 dark:bg-slate-700 rounded w-24" />
+                <div className="h-4 bg-gray-100 dark:bg-slate-700 rounded w-24" />
+                <div className="h-5 bg-gray-100 dark:bg-slate-700 rounded w-28" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && summaries.length === 0 && !error && (
+          <div className="text-center py-20">
+            <p className="text-gray-400 mb-4">No clients yet.</p>
+            <Link
+              to="/"
+              className="text-blue-600 hover:underline text-sm font-medium"
+            >
+              Add your first client →
+            </Link>
+          </div>
+        )}
+
+        {/* Per-client table */}
+        {!loading && summaries.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            {/* Table header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+              <div className="col-span-4">Client</div>
+              <div className="col-span-1 text-center">Txns</div>
+              <div className="col-span-2 text-right">Total Loans</div>
+              <div className="col-span-2 text-right">Total Repaid</div>
+              <div className="col-span-2 text-right">Net Balance</div>
+              <div className="col-span-1" />
+            </div>
+
+            {/* Rows */}
+            {summaries.map(
+              ({ client, totalLoans, totalRepayments, netBalance, txCount }) => (
+                <div
+                  key={client.id}
+                  className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 last:border-0 items-center hover:bg-gray-50/60 dark:hover:bg-slate-700/30 transition-colors group cursor-pointer"
+                  onClick={() => navigate(`/clients/${client.id}`)}
+                >
+                  {/* Client name */}
+                  <div className="col-span-4">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {client.name}
+                    </p>
+                    <span className="text-xs text-gray-400 dark:text-slate-500">
+                      {client.currency}
+                    </span>
+                  </div>
+
+                  {/* Transaction count */}
+                  <div className="col-span-1 text-center">
+                    <span className="text-sm text-gray-500 dark:text-slate-400">{txCount}</span>
+                  </div>
+
+                  {/* Total loans */}
+                  <div className="col-span-2 text-right">
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      {txCount === 0
+                        ? "—"
+                        : formatCurrency(totalLoans, client.currency)}
+                    </span>
+                  </div>
+
+                  {/* Total repayments */}
+                  <div className="col-span-2 text-right">
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      {txCount === 0
+                        ? "—"
+                        : formatCurrency(totalRepayments, client.currency)}
+                    </span>
+                  </div>
+
+                  {/* Net balance */}
+                  <div className="col-span-2 text-right">
+                    {txCount === 0 ? (
+                      <span className="text-sm text-gray-400 dark:text-slate-500">No data</span>
+                    ) : (
+                      <span
+                        className={`text-sm font-bold ${
+                          netBalance > 0
+                            ? "text-green-600"
+                            : netBalance < 0
+                            ? "text-red-600"
+                            : "text-gray-500 dark:text-slate-400"
+                        }`}
+                      >
+                        {netBalance > 0 ? "+" : ""}
+                        {formatCurrency(netBalance, client.currency)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="col-span-1 text-right">
+                    <span className="text-gray-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors text-sm">
+                      →
+                    </span>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

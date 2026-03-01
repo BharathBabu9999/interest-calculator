@@ -16,6 +16,7 @@ import { exportToPDF, exportToCSV, importFromCSV } from "../utils/export";
 import { clientsApi } from "../api/clients";
 import { transactionsApi, type TransactionRead } from "../api/transactions";
 import { useAuth } from "../contexts/AuthContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -192,10 +193,10 @@ export default function ClientPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{loadError}</p>
-          <button onClick={() => navigate("/")} className="text-blue-600 hover:underline">
+          <p className="text-red-600 dark:text-red-400 mb-4">{loadError}</p>
+          <button onClick={() => navigate("/")} className="text-blue-600 dark:text-blue-400 hover:underline">
             ← Back to Dashboard
           </button>
         </div>
@@ -205,39 +206,43 @@ export default function ClientPage() {
 
   if (loadingClient) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Loading…</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
+        <p className="text-gray-500 dark:text-slate-400">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
       {/* Top nav */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-900/80 backdrop-blur border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               to="/"
-              className="text-gray-500 hover:text-gray-800 text-sm flex items-center gap-1 transition-colors"
+              className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white text-sm flex items-center gap-1 transition-colors"
             >
               ← Dashboard
             </Link>
             {client && (
               <>
-                <span className="text-gray-300">/</span>
-                <span className="font-semibold text-gray-900">{client.name}</span>
-                <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">
+                <span className="text-gray-300 dark:text-slate-600">/</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{client.name}</span>
+                <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 rounded-full px-2 py-0.5">
                   {client.currency}
                 </span>
               </>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-slate-400 text-sm hidden sm:block">{user?.email}</span>
+            <Link to="/summary" className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors hidden sm:block">
+              Portfolio Summary
+            </Link>
+            <ThemeToggle />
+            <span className="text-gray-500 dark:text-slate-400 text-sm hidden sm:block">{user?.email}</span>
             <button
               onClick={logout}
-              className="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5 transition-colors"
+              className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 transition-colors"
             >
               Sign out
             </button>
@@ -248,21 +253,21 @@ export default function ClientPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page heading */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
             {client?.name ?? "Client"}
           </h1>
-          <p className="text-gray-500">Private financing loan and repayment tracker</p>
+          <p className="text-gray-500 dark:text-slate-400">Private financing loan and repayment tracker</p>
         </div>
 
         {/* As of Date */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">As of Date</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">As of Date</label>
             <input
               type="date"
               value={formatDateForInput(asOfDate)}
               onChange={(e) => setAsOfDate(new Date(e.target.value + "T00:00:00"))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -276,14 +281,14 @@ export default function ClientPage() {
         <TransactionForm onAddTransaction={handleAddTransaction} />
 
         {/* Controls bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
               <button
                 onClick={() =>
                   setSortOrder(sortOrder === "chronological" ? "entry" : "chronological")
                 }
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm"
               >
                 <svg className="w-4 h-4 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -292,7 +297,7 @@ export default function ClientPage() {
               </button>
               <button
                 onClick={() => setShowBulkUpdateModal(true)}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm"
               >
                 <svg className="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -302,24 +307,24 @@ export default function ClientPage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
-              <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
-                <label className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm cursor-pointer transition-all">
+                <div className="flex items-center bg-slate-100 dark:bg-slate-700 p-1 rounded-lg border border-slate-200 dark:border-slate-600">
+                  <label className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-md hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm cursor-pointer transition-all">
                   <span>Import</span>
                   <input type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
                 </label>
                 <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                <button onClick={handleExportPDF} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                <button onClick={handleExportPDF} className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-md hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm transition-all">
                   PDF
                 </button>
                 <div className="w-px h-4 bg-slate-300 mx-1"></div>
-                <button onClick={handleExportCSV} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                <button onClick={handleExportCSV} className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-md hover:bg-white dark:hover:bg-slate-600 hover:shadow-sm transition-all">
                   CSV
                 </button>
               </div>
               <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
               <button
                 onClick={handleClearAll}
-                className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-transparent hover:border-red-100 rounded-lg transition-colors"
+                className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 rounded-lg transition-colors"
               >
                 Clear All
               </button>
@@ -342,13 +347,13 @@ export default function ClientPage() {
         {/* Bulk Update Modal */}
         {showBulkUpdateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-semibold mb-4">Update All Interest Rates</h3>
-              <p className="text-gray-600 mb-4">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Update All Interest Rates</h3>
+              <p className="text-gray-600 dark:text-slate-400 mb-4">
                 This will change the interest rate for all {transactions.length} transactions.
               </p>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   New Interest Rate (% per month)
                 </label>
                 <input
@@ -357,14 +362,14 @@ export default function ClientPage() {
                   value={newBulkRate}
                   onChange={(e) => setNewBulkRate(e.target.value)}
                   placeholder="e.g., 2.5"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   autoFocus
                 />
               </div>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => { setShowBulkUpdateModal(false); setNewBulkRate(""); }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                  className="px-4 py-2 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600 transition"
                 >
                   Cancel
                 </button>

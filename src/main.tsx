@@ -3,15 +3,18 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import { AuthProvider, PrivateRoute } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientPage from './pages/ClientPage'
+import SummaryPage from './pages/SummaryPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
@@ -31,10 +34,19 @@ createRoot(document.getElementById('root')!).render(
               </PrivateRoute>
             }
           />
+          <Route
+            path="/summary"
+            element={
+              <PrivateRoute>
+                <SummaryPage />
+              </PrivateRoute>
+            }
+          />
           {/* Catch-all → dashboard */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
 )
