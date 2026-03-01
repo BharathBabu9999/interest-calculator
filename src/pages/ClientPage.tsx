@@ -1,0 +1,391 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import type { Transaction, Client } from "../types";
+import { formatDateForInput } from "../utils/dateUtils";
+import TransactionForm from "../components/TransactionForm";
+import TransactionTable from "../components/TransactionTable";
+import Summary from "../components/Summary";
+import PrivacyPolicy from "../components/PrivacyPolicy";
+import {
+  HowToUseSection,
+  IntroSection,
+  FAQSection,
+  Footer,
+} from "../components/ContentSections";
+import { exportToPDF, exportToCSV, importFromCSV } from "../utils/export";
+import { clientsApi } from "../api/clients";
+import { transactionsApi, type TransactionRead } from "../api/transactions";
+import { useAuth } from "../contexts/AuthContext";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function apiToLocal(tx: TransactionRead): Transaction {
+  return {
+    id: tx.id,
+    // Parse as local midnight so timezone doesn't shift the date
+    date: new Date(`${tx.date}T00:00:00`),
+    amount: tx.amount,
+    interestRate: tx.interest_rate,
+    type: tx.type,
+    notes: tx.notes ?? "",
+  };
+}
+
+// ── component ─────────────────────────────────────────────────────────────────
+
+export default function ClientPage() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const [client, setClient] = useState<Client | null>(null);
+  const [loadingClient, setLoadingClient] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [asOfDate, setAsOfDate] = useState<Date>(new Date());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [sortOrder, setSortOrder] = useState<"chronological" | "entry">("chronological");
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
+  const [newBulkRate, setNewBulkRate] = useState("");
+
+  // ── fetch client + transactions ──────────────────────────────────────────
+
+  const fetchData = useCallback(async () => {
+    if (!clientId) return;
+    setLoadingClient(true);
+    setLoadError(null);
+    try {
+      const [clientData, txData] = await Promise.all([
+        clientsApi.get(clientId),
+        transactionsApi.list(clientId),
+      ]);
+      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency });
+      setTransactions(txData.map(apiToLocal));
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Failed to load data");
+    } finally {
+      setLoadingClient(false);
+    }
+  }, [clientId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ── mutation handlers ────────────────────────────────────────────────────
+
+  const handleAddTransaction = async (transaction: Transaction) => {
+    if (!clientId) return;
+    try {
+      const created = await transactionsApi.create(clientId, {
+        date: formatDateForInput(transaction.date),
+        amount: transaction.amount,
+        interest_rate: transaction.interestRate,
+        type: transaction.type,
+        notes: transaction.notes || undefined,
+      });
+      setTransactions((prev) => [...prev, apiToLocal(created)]);
+    } catch (err) {
+      alert(`Failed to add transaction: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await transactionsApi.delete(id);
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      alert(`Failed to delete: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  const handleUpdateTransaction = async (updated: Transaction) => {
+    try {
+      const result = await transactionsApi.update(updated.id, {
+        date: formatDateForInput(updated.date),
+        amount: updated.amount,
+        interest_rate: updated.interestRate,
+        type: updated.type,
+        notes: updated.notes || undefined,
+      });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))
+      );
+    } catch (err) {
+      alert(`Failed to update: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!window.confirm(`Delete all ${transactions.length} transactions? This cannot be undone.`)) return;
+    try {
+      await Promise.all(transactions.map((t) => transactionsApi.delete(t.id)));
+      setTransactions([]);
+    } catch (err) {
+      alert(`Failed to clear: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (client) exportToPDF(client, transactions, asOfDate);
+  };
+
+  const handleExportCSV = () => {
+    if (client) exportToCSV(client, transactions, asOfDate);
+  };
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !clientId) return;
+
+    importFromCSV(
+      file,
+      async (importedTransactions) => {
+        event.target.value = "";
+        try {
+          const created = await Promise.all(
+            importedTransactions.map((tx) =>
+              transactionsApi.create(clientId, {
+                date: formatDateForInput(tx.date),
+                amount: tx.amount,
+                interest_rate: tx.interestRate,
+                type: tx.type,
+                notes: tx.notes || undefined,
+              })
+            )
+          );
+          setTransactions((prev) => [...prev, ...created.map(apiToLocal)]);
+          alert(`Successfully imported ${created.length} transactions!`);
+        } catch (err) {
+          alert(`Import failed: ${err instanceof Error ? err.message : err}`);
+        }
+      },
+      (error) => {
+        alert(`Import failed: ${error}`);
+        event.target.value = "";
+      }
+    );
+  };
+
+  const handleBulkUpdateRate = async () => {
+    const rate = parseFloat(newBulkRate);
+    if (isNaN(rate) || rate < 0) {
+      alert("Please enter a valid interest rate (0 or greater)");
+      return;
+    }
+    try {
+      const updated = await Promise.all(
+        transactions.map((t) =>
+          transactionsApi.update(t.id, { interest_rate: rate })
+        )
+      );
+      setTransactions(updated.map(apiToLocal));
+      setShowBulkUpdateModal(false);
+      setNewBulkRate("");
+      alert(`Updated interest rate to ${rate}% for all ${transactions.length} transactions`);
+    } catch (err) {
+      alert(`Bulk update failed: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  // ── render ───────────────────────────────────────────────────────────────
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{loadError}</p>
+          <button onClick={() => navigate("/")} className="text-blue-600 hover:underline">
+            ← Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadingClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">Loading…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top nav */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="text-gray-500 hover:text-gray-800 text-sm flex items-center gap-1 transition-colors"
+            >
+              ← Dashboard
+            </Link>
+            {client && (
+              <>
+                <span className="text-gray-300">/</span>
+                <span className="font-semibold text-gray-900">{client.name}</span>
+                <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">
+                  {client.currency}
+                </span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-slate-400 text-sm hidden sm:block">{user?.email}</span>
+            <button
+              onClick={logout}
+              className="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page heading */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            {client?.name ?? "Client"}
+          </h1>
+          <p className="text-gray-500">Private financing loan and repayment tracker</p>
+        </div>
+
+        {/* As of Date */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">As of Date</label>
+            <input
+              type="date"
+              value={formatDateForInput(asOfDate)}
+              onChange={(e) => setAsOfDate(new Date(e.target.value + "T00:00:00"))}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Summary */}
+        {client && (
+          <Summary transactions={transactions} asOfDate={asOfDate} currency={client.currency} />
+        )}
+
+        {/* Transaction Form */}
+        <TransactionForm onAddTransaction={handleAddTransaction} />
+
+        {/* Controls bar */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <button
+                onClick={() =>
+                  setSortOrder(sortOrder === "chronological" ? "entry" : "chronological")
+                }
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                </svg>
+                {sortOrder === "chronological" ? "Sort: Date" : "Sort: Entry"}
+              </button>
+              <button
+                onClick={() => setShowBulkUpdateModal(true)}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Update Rates
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-3 w-full lg:w-auto">
+              <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                <label className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm cursor-pointer transition-all">
+                  <span>Import</span>
+                  <input type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
+                </label>
+                <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                <button onClick={handleExportPDF} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                  PDF
+                </button>
+                <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                <button onClick={handleExportCSV} className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-md hover:bg-white hover:shadow-sm transition-all">
+                  CSV
+                </button>
+              </div>
+              <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
+              <button
+                onClick={handleClearAll}
+                className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-transparent hover:border-red-100 rounded-lg transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Transactions Table */}
+        {client && (
+          <TransactionTable
+            transactions={transactions}
+            asOfDate={asOfDate}
+            sortOrder={sortOrder}
+            currency={client.currency}
+            onDeleteTransaction={handleDeleteTransaction}
+            onUpdateTransaction={handleUpdateTransaction}
+          />
+        )}
+
+        {/* Bulk Update Modal */}
+        {showBulkUpdateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-semibold mb-4">Update All Interest Rates</h3>
+              <p className="text-gray-600 mb-4">
+                This will change the interest rate for all {transactions.length} transactions.
+              </p>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New Interest Rate (% per month)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newBulkRate}
+                  onChange={(e) => setNewBulkRate(e.target.value)}
+                  placeholder="e.g., 2.5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => { setShowBulkUpdateModal(false); setNewBulkRate(""); }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkUpdateRate}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+                >
+                  Update All
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Static content sections */}
+        <HowToUseSection />
+        <IntroSection />
+        <FAQSection />
+        <PrivacyPolicy />
+        <Footer />
+      </div>
+    </div>
+  );
+}
