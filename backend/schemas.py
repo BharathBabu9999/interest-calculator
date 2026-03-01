@@ -55,7 +55,7 @@ class TransactionCreate(BaseModel):
     date: Date
     amount: float
     interest_rate: float
-    type: Literal["loan", "repayment"]
+    type: Literal["lend", "borrow"]
     notes: Optional[str] = None
 
     @field_validator("amount")
@@ -77,7 +77,7 @@ class TransactionUpdate(BaseModel):
     date: Optional[Date] = None
     amount: Optional[float] = None
     interest_rate: Optional[float] = None
-    type: Optional[Literal["loan", "repayment"]] = None
+    type: Optional[Literal["lend", "borrow"]] = None
     notes: Optional[str] = None
 
 

@@ -46,7 +46,7 @@ export function exportToPDF(
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     return [
       formatDateForDisplay(transaction.date),
-      transaction.type === 'loan' ? 'Loan' : 'Repayment',
+      transaction.type === 'lend' ? 'Lend' : 'Borrow',
       `${currencySymbol}${transaction.amount.toFixed(2)}`,
       `${transaction.interestRate}%`,
       transaction.notes || '-',
@@ -87,7 +87,7 @@ export function exportToCSV(
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     return {
       Date: formatDateForDisplay(transaction.date),
-      Type: transaction.type === 'loan' ? 'Loan' : 'Repayment',
+      Type: transaction.type === 'lend' ? 'Lend' : 'Borrow',
       Amount: transaction.amount.toFixed(2),
       'Interest Rate (%)': transaction.interestRate,
       Notes: transaction.notes || '',
@@ -212,8 +212,8 @@ export function importFromCSV(
           }
 
           const type = (row.Type || row.type || '').toLowerCase();
-          if (type !== 'loan' && type !== 'repayment') {
-            throw new Error(`Invalid type: ${type}. Must be "Loan" or "Repayment"`);
+          if (type !== 'lend' && type !== 'borrow') {
+            throw new Error(`Invalid type: ${type}. Must be "Lend" or "Borrow"`);
           }
 
           const amount = parseFloat(row.Amount || row.amount || '0');
@@ -231,7 +231,7 @@ export function importFromCSV(
             date,
             amount,
             interestRate,
-            type: type as 'loan' | 'repayment',
+            type: type as 'lend' | 'borrow',
             notes: row.Notes || row.notes || '',
           };
         });

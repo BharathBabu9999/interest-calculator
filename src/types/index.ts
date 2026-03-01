@@ -3,7 +3,7 @@ export interface Transaction {
   date: Date;
   amount: number;
   interestRate: number; // percentage per month (e.g., 2 for 2%)
-  type: 'loan' | 'repayment';
+  type: 'lend' | 'borrow';
   notes: string;
 }
 

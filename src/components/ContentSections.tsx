@@ -75,8 +75,8 @@ export function HowToUseSection() {
         <div>
           <h3 className="text-lg font-semibold mb-2 text-blue-600">1. Add Transactions</h3>
           <p className="text-gray-700 dark:text-slate-300 mb-3">
-            Click "Add Transaction" and enter the date, amount, and interest rate. Choose between "Loan" 
-            (money lent) or "Repayment" (money received back).
+            Click "Add Transaction" and enter the date, amount, and interest rate. Choose between "Lend" 
+            (money given out) or "Borrow" (money received).
           </p>
         </div>
         <div>

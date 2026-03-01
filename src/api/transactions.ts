@@ -6,7 +6,7 @@ export interface TransactionRead {
   date: string; // ISO date string "YYYY-MM-DD"
   amount: number;
   interest_rate: number;
-  type: "loan" | "repayment";
+  type: "lend" | "borrow";
   notes: string | null;
   created_at: string;
 }
@@ -15,7 +15,7 @@ export interface TransactionCreate {
   date: string;
   amount: number;
   interest_rate: number;
-  type: "loan" | "repayment";
+  type: "lend" | "borrow";
   notes?: string;
 }
 
@@ -23,7 +23,7 @@ export interface TransactionUpdate {
   date?: string;
   amount?: number;
   interest_rate?: number;
-  type?: "loan" | "repayment";
+  type?: "lend" | "borrow";
   notes?: string;
 }
 

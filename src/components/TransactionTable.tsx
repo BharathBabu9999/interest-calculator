@@ -116,12 +116,12 @@ export default function TransactionTable({
                       <select
                         value={editForm.type}
                         onChange={(e) =>
-                          setEditForm({ ...editForm, type: e.target.value as 'loan' | 'repayment' })
+                          setEditForm({ ...editForm, type: e.target.value as 'lend' | 'borrow' })
                         }
                         className="px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded"
                       >
-                        <option value="loan">Loan</option>
-                        <option value="repayment">Repayment</option>
+                        <option value="lend">Lend</option>
+                        <option value="borrow">Borrow</option>
                       </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -184,12 +184,12 @@ export default function TransactionTable({
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded ${
-                          transaction.type === 'loan'
+                          transaction.type === 'lend'
                             ? 'bg-green-100 text-green-800'
                             : 'bg-amber-100 text-amber-800'
                         }`}
                       >
-                        {transaction.type === 'loan' ? 'Loan' : 'Repayment'}
+                        {transaction.type === 'lend' ? 'Lend' : 'Borrow'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
