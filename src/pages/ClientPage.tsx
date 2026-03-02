@@ -67,7 +67,7 @@ export default function ClientPage() {
         clientsApi.get(clientId),
         transactionsApi.list(clientId),
       ]);
-      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, notes: clientData.notes });
+      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company });
       setNotesDraft(clientData.notes ?? "");
       setTransactions(txData.map(apiToLocal));
     } catch (err) {
@@ -408,6 +408,52 @@ export default function ClientPage() {
         )}
 
         {/* Static content sections */}
+        {/* Contact Info */}
+        {(client?.phone || client?.email || client?.address || client?.company) && (
+          <div className="mt-8 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+              <svg className="w-4 h-4 text-gray-400 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Contact Info</h3>
+            </div>
+            <dl className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              {client?.company && (
+                <div>
+                  <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Company</dt>
+                  <dd className="text-sm text-gray-800 dark:text-slate-200">{client.company}</dd>
+                </div>
+              )}
+              {client?.phone && (
+                <div>
+                  <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Phone</dt>
+                  <dd>
+                    <a href={`tel:${client.phone}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      {client.phone}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {client?.email && (
+                <div>
+                  <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Email</dt>
+                  <dd>
+                    <a href={`mailto:${client.email}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                      {client.email}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {client?.address && (
+                <div className="sm:col-span-2">
+                  <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Address</dt>
+                  <dd className="text-sm text-gray-800 dark:text-slate-200 whitespace-pre-line">{client.address}</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
+
         {/* Notes */}
         <div className="mt-8 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">

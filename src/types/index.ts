@@ -12,6 +12,10 @@ export interface Client {
   id: string;
   currency: string;
   notes?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  company?: string | null;
 }
 
 export interface CalculationBreakdown {

@@ -10,9 +10,13 @@ interface ClientFormState {
   name: string;
   currency: string;
   notes: string;
+  phone: string;
+  email: string;
+  address: string;
+  company: string;
 }
 
-const empty: ClientFormState = { name: "", currency: "INR", notes: "" };
+const empty: ClientFormState = { name: "", currency: "INR", notes: "", phone: "", email: "", address: "", company: "" };
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -59,7 +63,7 @@ export default function DashboardPage() {
 
   const openEdit = (client: ClientRead) => {
     setEditingClient(client);
-    setForm({ name: client.name, currency: client.currency, notes: client.notes ?? "" });
+    setForm({ name: client.name, currency: client.currency, notes: client.notes ?? "", phone: client.phone ?? "", email: client.email ?? "", address: client.address ?? "", company: client.company ?? "" });
     setFormError(null);
     setModalOpen(true);
   };
@@ -83,6 +87,10 @@ export default function DashboardPage() {
         name: form.name.trim(),
         currency: form.currency,
         notes: form.notes.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        email: form.email.trim() || undefined,
+        address: form.address.trim() || undefined,
+        company: form.company.trim() || undefined,
       };
       if (editingClient) {
         const updated = await clientsApi.update(editingClient.id, payload);
@@ -213,6 +221,9 @@ export default function DashboardPage() {
                 <div className="flex items-start justify-between">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-gray-900 dark:text-white truncate">{client.name}</h3>
+                    {client.company && (
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">{client.company}</p>
+                    )}
                     <span className="inline-block mt-1 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
                       {client.currency}
                     </span>
@@ -242,6 +253,28 @@ export default function DashboardPage() {
                 {client.notes && (
                   <p className="text-gray-500 dark:text-slate-400 text-xs line-clamp-2">{client.notes}</p>
                 )}
+                {(client.phone || client.email) && (
+                  <div className="flex flex-col gap-0.5">
+                    {client.phone && (
+                      <a
+                        href={`tel:${client.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                      >
+                        📞 {client.phone}
+                      </a>
+                    )}
+                    {client.email && (
+                      <a
+                        href={`mailto:${client.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                      >
+                        ✉ {client.email}
+                      </a>
+                    )}
+                  </div>
+                )}
                   <div className="mt-auto pt-2 border-t border-gray-200 dark:border-slate-700">
                     <span className="text-blue-600 dark:text-blue-400 text-xs font-medium group-hover:underline">
                     View transactions →
@@ -258,7 +291,7 @@ export default function DashboardPage() {
       {/* Create/Edit Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-5">
               {editingClient ? "Edit Client" : "New Client"}
             </h3>
@@ -278,21 +311,77 @@ export default function DashboardPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                    Company <span className="text-gray-400 dark:text-slate-500">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.company}
+                    onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
+                    className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Acme Corp"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                    Currency
+                  </label>
+                  <select
+                    value={form.currency}
+                    onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                    className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                    Phone <span className="text-gray-400 dark:text-slate-500">(optional)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                    Email <span className="text-gray-400 dark:text-slate-500">(optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="raj@example.com"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Currency
+                  Address <span className="text-gray-400 dark:text-slate-500">(optional)</span>
                 </label>
-                <select
-                  value={form.currency}
-                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                  className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <textarea
+                  value={form.address}
+                  onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                  rows={2}
+                  className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="123 Main St, Mumbai, India"
+                />
               </div>
 
               <div>

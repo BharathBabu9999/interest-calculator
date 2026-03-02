@@ -5,6 +5,10 @@ export interface ClientRead {
   name: string;
   currency: string;
   notes: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  company: string | null;
   created_at: string;
 }
 
@@ -12,12 +16,20 @@ export interface ClientCreate {
   name: string;
   currency: string;
   notes?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  company?: string;
 }
 
 export interface ClientUpdate {
   name?: string;
   currency?: string;
   notes?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  company?: string;
 }
 
 export const clientsApi = {

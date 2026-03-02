@@ -31,12 +31,20 @@ class ClientCreate(BaseModel):
     name: str
     currency: str = "USD"
     notes: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    company: Optional[str] = None
 
 
 class ClientUpdate(BaseModel):
     name: Optional[str] = None
     currency: Optional[str] = None
     notes: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    company: Optional[str] = None
 
 
 class ClientRead(BaseModel):
@@ -44,6 +52,10 @@ class ClientRead(BaseModel):
     name: str
     currency: str
     notes: Optional[str]
+    phone: Optional[str]
+    email: Optional[str]
+    address: Optional[str]
+    company: Optional[str]
     created_at: datetime
 
     model_config = {"from_attributes": True}
