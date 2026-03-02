@@ -146,11 +146,14 @@ The app runs at **http://localhost:5173**.
 ### 7 — Try it out
 
 1. Open `http://localhost:5173` → click **"Create one"** to register
-2. On the dashboard, click **"+ Add Client"** — enter a name and currency
+2. On the dashboard, click **"+ Add Client"** — enter a name, currency, and optional contact details
 3. Click the client card → you're in the transaction view
 4. Add **Lend** or **Borrow** transactions; interest is calculated live
-5. Click **"Portfolio Summary"** in the nav to see totals across all clients
-6. Use the **sun/moon icon** in the top-right to toggle dark / light mode
+5. Click any row to expand the step-by-step compounding breakdown
+6. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
+7. Click **"Portfolio Summary"** in the nav to see totals across all clients
+8. On the client page, add notes or upload files (images, PDFs, documents) using the Files card
+9. Use the **sun/moon icon** in the top-right to toggle dark / light mode
 
 ---
 

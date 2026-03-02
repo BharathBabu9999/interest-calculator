@@ -25,8 +25,8 @@ function apiToLocal(tx: TransactionRead): Transaction {
 
 interface ClientSummary {
   client: ClientRead;
-  totalLoans: number;
-  totalRepayments: number;
+  totalLent: number;
+  totalBorrowed: number;
   netBalance: number;
   txCount: number;
 }
@@ -59,12 +59,12 @@ export default function SummaryPage() {
 
       const result: ClientSummary[] = clients.map((client, i) => {
         const transactions = txLists[i].map(apiToLocal);
-        const { totalLoans, totalRepayments, netBalance } =
+        const { totalLent, totalBorrowed, netBalance } =
           calculateTotalBalance(transactions, asOfDate);
         return {
           client,
-          totalLoans,
-          totalRepayments,
+          totalLent,
+          totalBorrowed,
           netBalance,
           txCount: transactions.length,
         };
@@ -85,12 +85,12 @@ export default function SummaryPage() {
   // ── grand totals grouped by currency ────────────────────────────────────────
 
   const totalsMap = summaries.reduce<
-    Record<string, { loans: number; repayments: number; net: number }>
-  >((acc, { client, totalLoans, totalRepayments, netBalance }) => {
+    Record<string, { lent: number; borrowed: number; net: number }>
+  >((acc, { client, totalLent, totalBorrowed, netBalance }) => {
     const cur = client.currency;
-    if (!acc[cur]) acc[cur] = { loans: 0, repayments: 0, net: 0 };
-    acc[cur].loans += totalLoans;
-    acc[cur].repayments += totalRepayments;
+    if (!acc[cur]) acc[cur] = { lent: 0, borrowed: 0, net: 0 };
+    acc[cur].lent += totalLent;
+    acc[cur].borrowed += totalBorrowed;
     acc[cur].net += netBalance;
     return acc;
   }, {});
@@ -191,15 +191,15 @@ export default function SummaryPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                    <span>Total Loans</span>
+                    <span>Total Lent</span>
                     <span className="font-medium text-gray-800 dark:text-slate-200">
-                      {formatCurrency(totals.loans, currency)}
+                      {formatCurrency(totals.lent, currency)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                    <span>Total Repaid</span>
+                    <span>Total Borrowed</span>
                     <span className="font-medium text-gray-800 dark:text-slate-200">
-                      {formatCurrency(totals.repayments, currency)}
+                      {formatCurrency(totals.borrowed, currency)}
                     </span>
                   </div>
                   <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between">
@@ -260,15 +260,15 @@ export default function SummaryPage() {
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
               <div className="col-span-4">Client</div>
               <div className="col-span-1 text-center">Txns</div>
-              <div className="col-span-2 text-right">Total Loans</div>
-              <div className="col-span-2 text-right">Total Repaid</div>
+              <div className="col-span-2 text-right">Total Lent</div>
+              <div className="col-span-2 text-right">Total Borrowed</div>
               <div className="col-span-2 text-right">Net Balance</div>
               <div className="col-span-1" />
             </div>
 
             {/* Rows */}
             {summaries.map(
-              ({ client, totalLoans, totalRepayments, netBalance, txCount }) => (
+              ({ client, totalLent, totalBorrowed, netBalance, txCount }) => (
                 <div
                   key={client.id}
                   className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 last:border-0 items-center hover:bg-gray-50/60 dark:hover:bg-slate-700/30 transition-colors group cursor-pointer"
@@ -289,21 +289,21 @@ export default function SummaryPage() {
                     <span className="text-sm text-gray-500 dark:text-slate-400">{txCount}</span>
                   </div>
 
-                  {/* Total loans */}
+                  {/* Total lent */}
                   <div className="col-span-2 text-right">
                     <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                       {txCount === 0
                         ? "—"
-                        : formatCurrency(totalLoans, client.currency)}
+                        : formatCurrency(totalLent, client.currency)}
                     </span>
                   </div>
 
-                  {/* Total repayments */}
+                  {/* Total borrowed */}
                   <div className="col-span-2 text-right">
                     <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                       {txCount === 0
                         ? "—"
-                        : formatCurrency(totalRepayments, client.currency)}
+                        : formatCurrency(totalBorrowed, client.currency)}
                     </span>
                   </div>
 

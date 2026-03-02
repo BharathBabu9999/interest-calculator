@@ -6,81 +6,71 @@ export default function PrivacyPolicy() {
       <div id="privacy">
       
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        <strong>Last Updated:</strong> November 29, 2025
+        <strong>Last Updated:</strong> March 1, 2026
       </p>
 
-      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Your Privacy Matters</h3>
+      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Overview</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        We are committed to protecting your privacy. This Interest Calculator is designed with privacy as a priority. 
-        We do not collect, store, or transmit any of your personal financial data to our servers.
+        This is a self-hosted, private application. All data is stored in a PostgreSQL database on your own server.
+        No data is shared with third parties, advertising networks, or analytics services.
       </p>
 
       <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Data Storage</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        All transaction data, client information, and calculations are stored locally in your web browser using browser 
-        storage technology. This means:
+        Your financial data is stored server-side in a PostgreSQL database that you control. This includes:
       </p>
       <ul className="list-disc list-inside text-gray-700 dark:text-slate-300 mb-4 space-y-1">
-        <li>Your data never leaves your device</li>
-        <li>We cannot access your financial information</li>
-        <li>Your calculations remain completely private</li>
-        <li>Data is only accessible on the device and browser where you entered it</li>
+        <li>Account credentials (email address and bcrypt-hashed password — plain-text passwords are never stored)</li>
+        <li>Client records: names, contact details, notes, and currency preferences</li>
+        <li>Transaction records: dates, amounts, interest rates, types, and completion status</li>
+        <li>Uploaded files: stored on the server filesystem under your uploads directory</li>
+      </ul>
+      <p className="text-gray-700 dark:text-slate-300 mb-4">
+        Two small items are stored in your browser's <code>localStorage</code>:
+      </p>
+      <ul className="list-disc list-inside text-gray-700 dark:text-slate-300 mb-4 space-y-1">
+        <li>Your JWT session token (used to authenticate API requests; expires after 7 days)</li>
+        <li>Your dark/light theme preference</li>
       </ul>
 
-      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Cookies and Tracking</h3>
+      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Authentication</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        We use cookies and similar technologies only for:
+        An account is required to use this application. Sessions are managed with signed JSON Web Tokens (JWT).
+        Tokens expire after 7 days and are stored only in your browser's localStorage — they are never sent to any
+        third-party service.
       </p>
-      <ul className="list-disc list-inside text-gray-700 dark:text-slate-300 mb-4 space-y-1">
-        <li>Maintaining your session and preferences</li>
-        <li>Analytics to understand how users interact with the calculator (anonymized data only)</li>
-        <li>Advertising purposes through Google AdSense (if applicable)</li>
-      </ul>
+
+      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Data Access</h3>
+      <p className="text-gray-700 dark:text-slate-300 mb-4">
+        Each user's data is fully isolated — you can only read and modify your own clients and transactions.
+        Access to the underlying database requires direct server access, which is controlled by whoever hosts
+        the application.
+      </p>
 
       <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Third-Party Services</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        This website may use third-party services including:
-      </p>
-      <ul className="list-disc list-inside text-gray-700 dark:text-slate-300 mb-4 space-y-1">
-        <li><strong>Google Analytics:</strong> To understand website usage patterns (anonymized)</li>
-        <li><strong>Google AdSense:</strong> To display relevant advertisements</li>
-        <li><strong>Hosting Provider:</strong> To deliver the website to your browser</li>
-      </ul>
-      <p className="text-gray-700 dark:text-slate-300 mb-4">
-        These services have their own privacy policies and may collect certain information as described in their 
-        respective policies.
+        This application does not integrate any third-party analytics, advertising, or tracking services.
+        No data is transmitted to external parties.
       </p>
 
       <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Your Data Rights</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        Since all data is stored locally on your device, you have complete control:
+        Because this is self-hosted, you have full control over your data:
       </p>
       <ul className="list-disc list-inside text-gray-700 dark:text-slate-300 mb-4 space-y-1">
-        <li>You can clear all data by clearing your browser's storage</li>
-        <li>You can export your data using the CSV export function</li>
-        <li>You can delete individual transactions at any time</li>
-        <li>No account or registration is required to use this tool</li>
+        <li>Export transactions at any time as CSV or PDF</li>
+        <li>Delete individual transactions, clients, or uploaded files from the UI</li>
+        <li>Delete your account and all associated data directly from the database</li>
+        <li>Clear your session by logging out (removes the JWT from localStorage)</li>
       </ul>
 
-      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Children's Privacy</h3>
+      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Changes to This Policy</h3>
       <p className="text-gray-700 dark:text-slate-300 mb-4">
-        This service is not directed to children under the age of 13. We do not knowingly collect personal information 
-        from children.
-      </p>
-
-      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Changes to Privacy Policy</h3>
-      <p className="text-gray-700 dark:text-slate-300 mb-4">
-        We may update this privacy policy from time to time. Any changes will be posted on this page with an updated 
-        revision date.
-      </p>
-
-      <h3 className="text-xl font-semibold mb-3 mt-6 dark:text-white">Contact</h3>
-      <p className="text-gray-700 dark:text-slate-300 mb-4">
-        If you have questions about this privacy policy, please contact us through the website.
+        This policy may be updated as the application evolves. Changes will be reflected in the "Last Updated" date above.
       </p>
 
       <p className="text-sm text-gray-500 dark:text-slate-400 mt-6">
-        By using this Interest Calculator, you acknowledge that you have read and understood this Privacy Policy.
+        By using this application, you acknowledge that you have read and understood this Privacy Policy.
       </p>
       </div>
     </Accordion>

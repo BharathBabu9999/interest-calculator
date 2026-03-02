@@ -113,7 +113,7 @@ export function FAQSection() {
           <h3 className="font-semibold text-lg mb-2 dark:text-white">How does anniversary-based compounding work?</h3>
           <p className="text-gray-700 dark:text-slate-300">
             Unlike calendar year-end compounding, our calculator compounds interest exactly one year from each 
-            transaction date. For example, a loan on March 15, 2023 will compound on March 15, 2024, then 
+            transaction date. For example, a lend transaction on March 15, 2023 will compound on March 15, 2024, then 
             March 15, 2025, and so on. This provides more accurate calculations for private financing.
           </p>
         </div>
@@ -127,17 +127,16 @@ export function FAQSection() {
         <div>
           <h3 className="font-semibold text-lg mb-2 dark:text-white">Can I track multiple clients?</h3>
           <p className="text-gray-700 dark:text-slate-300">
-            Currently, the calculator works with one client at a time. You can export the data for one client, 
-            clear all transactions, and start tracking a new client. We recommend keeping separate CSV files 
-            for different clients.
+            Yes. Each account supports unlimited clients. Add a client from the dashboard, then switch between
+            them freely. The Portfolio Summary page shows totals across all clients grouped by currency.
           </p>
         </div>
         <div>
           <h3 className="font-semibold text-lg mb-2 dark:text-white">Is my data saved?</h3>
           <p className="text-gray-700 dark:text-slate-300">
-            All data is stored locally in your browser. It's not sent to any server, ensuring complete privacy. 
-            However, this means if you clear your browser data or use a different device, your transactions won't 
-            be available. Always export important data as backup.
+            Yes — all data is stored in a PostgreSQL database on your server. It persists across page refreshes,
+            browser changes, and devices. Your session token is kept in localStorage and expires after 7 days.
+            Export CSV or PDF at any time as an additional backup.
           </p>
         </div>
       </div>
@@ -153,8 +152,8 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-lg mb-3">About This Tool</h3>
             <p className="text-gray-300 text-sm">
-              Professional interest calculator for private financing, loans, and repayments. Built with precision 
-              algorithms for accurate financial tracking.
+              Professional interest calculator for private financing — track lent and borrowed amounts with
+              precision algorithms for accurate financial tracking.
             </p>
           </div>
           <div>
