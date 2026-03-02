@@ -22,6 +22,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "lend",
     notes: "Initial lend",
+    completed: false,
   },
   {
     id: "2",
@@ -30,6 +31,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "lend",
     notes: "Additional lend",
+    completed: false,
   },
   {
     id: "3",
@@ -38,6 +40,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "lend",
     notes: "Third lend",
+    completed: false,
   },
   {
     id: "4",
@@ -46,6 +49,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "borrow",
     notes: "First payment",
+    completed: false,
   },
   {
     id: "5",
@@ -54,6 +58,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "borrow",
     notes: "Second payment",
+    completed: false,
   },
   {
     id: "6",
@@ -62,6 +67,7 @@ const sampleTransactions: Transaction[] = [
     interestRate: 2,
     type: "borrow",
     notes: "Third payment",
+    completed: false,
   },
 ];
 
@@ -310,6 +316,11 @@ function App() {
           currency={client.currency}
           onDeleteTransaction={handleDeleteTransaction}
           onUpdateTransaction={handleUpdateTransaction}
+          onToggleCompleted={(id, completed) => {
+            setTransactions((prev) =>
+              prev.map((t) => (t.id === id ? { ...t, completed } : t))
+            );
+          }}
         />
 
         {/* Bulk Update Modal */}

@@ -69,6 +69,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       interestRate: data.interestRate,
       type: data.type,
       notes: data.notes,
+      completed: false,
     };
 
     onAddTransaction(transaction);
