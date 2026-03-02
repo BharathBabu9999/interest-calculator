@@ -19,6 +19,7 @@ function apiToLocal(tx: TransactionRead): Transaction {
     interestRate: tx.interest_rate,
     type: tx.type,
     notes: tx.notes ?? "",
+    completed: tx.completed ?? false,
   };
 }
 

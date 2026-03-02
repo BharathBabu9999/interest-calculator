@@ -8,6 +8,7 @@ export interface TransactionRead {
   interest_rate: number;
   type: "lend" | "borrow";
   notes: string | null;
+  completed: boolean;
   created_at: string;
 }
 
@@ -17,6 +18,7 @@ export interface TransactionCreate {
   interest_rate: number;
   type: "lend" | "borrow";
   notes?: string;
+  completed?: boolean;
 }
 
 export interface TransactionUpdate {
@@ -25,6 +27,7 @@ export interface TransactionUpdate {
   interest_rate?: number;
   type?: "lend" | "borrow";
   notes?: string;
+  completed?: boolean;
 }
 
 export const transactionsApi = {

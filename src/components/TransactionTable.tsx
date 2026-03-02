@@ -11,6 +11,7 @@ interface TransactionTableProps {
   currency: string;
   onDeleteTransaction: (id: string) => void;
   onUpdateTransaction: (transaction: Transaction) => void;
+  onToggleCompleted: (id: string, completed: boolean) => void;
 }
 
 export default function TransactionTable({
@@ -20,6 +21,7 @@ export default function TransactionTable({
   currency,
   onDeleteTransaction,
   onUpdateTransaction,
+  onToggleCompleted,
 }: TransactionTableProps) {
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -89,6 +91,9 @@ export default function TransactionTable({
                 Current Value
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -98,6 +103,7 @@ export default function TransactionTable({
               const breakdown = calculateCurrentValue(transaction, asOfDate);
               const isExpanded = expandedIds.includes(transaction.id);
               const isEditing = editingId === transaction.id;
+              const isCompleted = transaction.completed;
 
               if (isEditing && editForm) {
                 return (
@@ -158,6 +164,17 @@ export default function TransactionTable({
                       {formatCurrency(breakdown.currentValue, currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editForm.completed}
+                          onChange={(e) => setEditForm({ ...editForm, completed: e.target.checked })}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-gray-500 dark:text-slate-400">Completed</span>
+                      </label>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={saveEdit}
                         className="text-green-600 hover:text-green-800 dark:hover:text-green-400 mr-3"
@@ -177,7 +194,7 @@ export default function TransactionTable({
 
               return (
                 <Fragment key={transaction.id}>
-                  <tr className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                  <tr className={`hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors ${isCompleted ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {formatDateForDisplay(transaction.date)}
                     </td>
@@ -202,7 +219,26 @@ export default function TransactionTable({
                       {transaction.notes || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(breakdown.currentValue, currency)}
+                      {isCompleted ? (
+                        <span className="line-through text-gray-400 dark:text-slate-500">
+                          {formatCurrency(breakdown.currentValue, currency)}
+                        </span>
+                      ) : (
+                        formatCurrency(breakdown.currentValue, currency)
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => onToggleCompleted(transaction.id, !transaction.completed)}
+                        title={isCompleted ? 'Mark as active' : 'Mark as completed'}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                          isCompleted
+                            ? 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400'
+                            : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40'
+                        }`}
+                      >
+                        {isCompleted ? '✓ Done' : '○ Active'}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
@@ -227,7 +263,7 @@ export default function TransactionTable({
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 bg-gray-50 dark:bg-slate-700/30">
+                      <td colSpan={8} className="px-6 py-4 bg-gray-50 dark:bg-slate-700/30">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-gray-900 dark:text-white">Calculation Breakdown</h4>
                           

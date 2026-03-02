@@ -5,6 +5,7 @@ export interface Transaction {
   interestRate: number; // percentage per month (e.g., 2 for 2%)
   type: 'lend' | 'borrow';
   notes: string;
+  completed: boolean;
 }
 
 export interface Client {

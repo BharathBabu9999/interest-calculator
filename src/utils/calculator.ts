@@ -105,6 +105,7 @@ export function calculateTotalBalance(
   let totalRepayments = 0;
 
   transactions.forEach((transaction) => {
+    if (transaction.completed) return; // skip completed transactions
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     
     if (transaction.type === 'lend') {

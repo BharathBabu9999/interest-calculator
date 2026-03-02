@@ -69,6 +69,7 @@ class TransactionCreate(BaseModel):
     interest_rate: float
     type: Literal["lend", "borrow"]
     notes: Optional[str] = None
+    completed: bool = False
 
     @field_validator("amount")
     @classmethod
@@ -91,6 +92,7 @@ class TransactionUpdate(BaseModel):
     interest_rate: Optional[float] = None
     type: Optional[Literal["lend", "borrow"]] = None
     notes: Optional[str] = None
+    completed: Optional[bool] = None
 
 
 class TransactionRead(BaseModel):
@@ -101,6 +103,7 @@ class TransactionRead(BaseModel):
     interest_rate: float
     type: str
     notes: Optional[str]
+    completed: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

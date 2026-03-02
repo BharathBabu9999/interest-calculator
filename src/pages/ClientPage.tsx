@@ -30,6 +30,7 @@ function apiToLocal(tx: TransactionRead): Transaction {
     interestRate: tx.interest_rate,
     type: tx.type,
     notes: tx.notes ?? "",
+    completed: tx.completed ?? false,
   };
 }
 
@@ -132,7 +133,19 @@ export default function ClientPage() {
         interest_rate: updated.interestRate,
         type: updated.type,
         notes: updated.notes || undefined,
+        completed: updated.completed,
       });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))
+      );
+    } catch (err) {
+      alert(`Failed to update: ${err instanceof Error ? err.message : err}`);
+    }
+  };
+
+  const handleToggleCompleted = async (id: string, completed: boolean) => {
+    try {
+      const result = await transactionsApi.update(id, { completed });
       setTransactions((prev) =>
         prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))
       );
@@ -364,6 +377,7 @@ export default function ClientPage() {
             currency={client.currency}
             onDeleteTransaction={handleDeleteTransaction}
             onUpdateTransaction={handleUpdateTransaction}
+            onToggleCompleted={handleToggleCompleted}
           />
         )}
 
