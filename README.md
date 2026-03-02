@@ -12,12 +12,15 @@ A full-stack React + FastAPI application for managing private financing — trac
 ### Client Management
 - **Multiple clients per user** — add as many borrowers/lenders as needed
 - **Per-client currency** — each client can have a different currency (INR, USD, EUR, GBP, JPY, AUD, CAD)
-- **Optional notes** — attach notes to each client
+- **Contact details** — store phone, email, address, and company per client
+- **Editable notes** — attach and edit free-text notes on each client page
+- **File attachments** — upload documents (images, PDF, Word, Excel, PowerPoint, CSV) per client with thumbnail previews, upload date/time, and per-file descriptions
 - **Full CRUD** — create, edit, and delete clients from the dashboard
 
 ### Transaction Tracking (per client)
 - **Dual transaction types** — **Lend** (money given out) and **Borrow** (money received)
 - **Variable interest rates** — each transaction has its own monthly rate
+- **Completed flag** — mark a transaction as completed to exclude it from net balance calculations (shown dimmed with strikethrough)
 - **CSV import/export** — bulk import transactions from spreadsheets; export to CSV or PDF
 - **Inline editing** — edit any transaction directly in the table
 - **Bulk rate update** — change the interest rate for all transactions at once
@@ -158,13 +161,15 @@ interest-calc/
 ├── backend/                        # FastAPI backend
 │   ├── main.py                     # App entry point, CORS, startup
 │   ├── database.py                 # AsyncSQLAlchemy engine + session
-│   ├── models.py                   # User / Client / Transaction ORM models
+│   ├── models.py                   # User / Client / Transaction / ClientFile ORM models
 │   ├── schemas.py                  # Pydantic request/response schemas
 │   ├── auth.py                     # JWT creation, bcrypt, get_current_user
 │   ├── routers/
 │   │   ├── auth.py                 # POST /auth/register, /auth/login, GET /auth/me
 │   │   ├── clients.py              # GET/POST /clients, PUT/DELETE /clients/:id
-│   │   └── transactions.py        # GET/POST /clients/:id/transactions, PUT/DELETE /transactions/:id
+│   │   ├── transactions.py         # GET/POST /clients/:id/transactions, PUT/DELETE /transactions/:id
+│   │   └── files.py                # GET/POST /clients/:id/files, GET/PATCH/DELETE /files/:id
+│   ├── uploads/                    # Uploaded files stored here (git-ignored)
 │   ├── requirements.txt
 │   ├── .env                        # Secret config (git-ignored)
 │   └── .env.example
@@ -174,7 +179,8 @@ interest-calc/
     │   ├── client.ts               # Base fetch wrapper (injects Bearer token)
     │   ├── auth.ts                 # login(), register()
     │   ├── clients.ts              # Client CRUD
-    │   └── transactions.ts         # Transaction CRUD
+    │   ├── transactions.ts         # Transaction CRUD
+    │   └── files.ts                # File upload/download/delete/description
     ├── contexts/
     │   ├── AuthContext.tsx         # useAuth() hook, PrivateRoute
     │   └── ThemeContext.tsx        # useTheme() hook, ThemeProvider, localStorage persistence
@@ -188,6 +194,7 @@ interest-calc/
     │   ├── TransactionForm.tsx
     │   ├── TransactionTable.tsx
     │   ├── Summary.tsx
+    │   ├── ClientFiles.tsx         # File cards with thumbnails, drag-and-drop upload
     │   ├── ThemeToggle.tsx         # Sun/moon icon button
     │   ├── Accordion.tsx
     │   ├── ContentSections.tsx
@@ -219,8 +226,9 @@ interest-calc/
 
 ```
 User
- └── Client (name, currency)
-       └── Transaction (date, amount, interest_rate, type, notes)
+ └── Client (name, currency, phone, email, address, company, notes)
+       ├── Transaction (date, amount, interest_rate, type, notes, completed)
+       └── ClientFile (original_filename, mimetype, size, description, stored on disk)
 ```
 
 All data is user-scoped — a user can only see and modify their own clients and transactions.
