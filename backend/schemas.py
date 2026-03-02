@@ -92,3 +92,17 @@ class TransactionRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Client Files ──────────────────────────────────────────────────────────────
+
+class ClientFileRead(BaseModel):
+    id: uuid.UUID
+    client_id: uuid.UUID
+    original_filename: str
+    mimetype: str
+    size: int
+    description: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

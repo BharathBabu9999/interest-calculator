@@ -30,6 +30,7 @@ class Client(Base):
 
     user: Mapped["User"] = relationship("User", back_populates="clients")
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="client", cascade="all, delete-orphan")
+    files: Mapped[list["ClientFile"]] = relationship("ClientFile", back_populates="client", cascade="all, delete-orphan")
 
 
 class Transaction(Base):
@@ -45,3 +46,18 @@ class Transaction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     client: Mapped["Client"] = relationship("Client", back_populates="transactions")
+
+
+class ClientFile(Base):
+    __tablename__ = "client_files"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    stored_filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    mimetype: Mapped[str] = mapped_column(String(200), nullable=False)
+    size: Mapped[int] = mapped_column(nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    client: Mapped["Client"] = relationship("Client", back_populates="files")

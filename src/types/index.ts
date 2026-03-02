@@ -11,6 +11,7 @@ export interface Client {
   name: string;
   id: string;
   currency: string;
+  notes?: string | null;
 }
 
 export interface CalculationBreakdown {

@@ -29,3 +29,5 @@ backend/.venv
 *.njsproj
 *.sln
 *.sw?
+# uploaded files
+backend/uploads/
