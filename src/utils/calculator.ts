@@ -91,32 +91,33 @@ export function calculateCurrentValue(
 }
 
 /**
- * Calculate total outstanding balance (loans - repayments)
+ * Calculate total outstanding balance (lent - borrowed)
  */
 export function calculateTotalBalance(
   transactions: Transaction[],
   asOfDate: Date
 ): {
-  totalLoans: number;
-  totalRepayments: number;
+  totalLent: number;
+  totalBorrowed: number;
   netBalance: number;
 } {
-  let totalLoans = 0;
-  let totalRepayments = 0;
+  let totalLent = 0;
+  let totalBorrowed = 0;
 
   transactions.forEach((transaction) => {
+    if (transaction.completed) return; // skip completed transactions
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     
-    if (transaction.type === 'loan') {
-      totalLoans += breakdown.currentValue;
+    if (transaction.type === 'lend') {
+      totalLent += breakdown.currentValue;
     } else {
-      totalRepayments += breakdown.currentValue;
+      totalBorrowed += breakdown.currentValue;
     }
   });
 
   return {
-    totalLoans,
-    totalRepayments,
-    netBalance: totalLoans - totalRepayments,
+    totalLent,
+    totalBorrowed,
+    netBalance: totalLent - totalBorrowed,
   };
 }

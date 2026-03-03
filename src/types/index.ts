@@ -3,14 +3,20 @@ export interface Transaction {
   date: Date;
   amount: number;
   interestRate: number; // percentage per month (e.g., 2 for 2%)
-  type: 'loan' | 'repayment';
+  type: 'lend' | 'borrow';
   notes: string;
+  completed: boolean;
 }
 
 export interface Client {
   name: string;
   id: string;
   currency: string;
+  notes?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  company?: string | null;
 }
 
 export interface CalculationBreakdown {

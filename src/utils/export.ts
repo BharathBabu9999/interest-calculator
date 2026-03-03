@@ -29,7 +29,7 @@ export function exportToPDF(
   doc.text(`As of Date: ${formatDateForDisplay(asOfDate)}`, 14, 51);
 
   // Summary
-  const { totalLoans, totalRepayments, netBalance } = calculateTotalBalance(
+  const { totalLent, totalBorrowed, netBalance } = calculateTotalBalance(
     transactions,
     asOfDate
   );
@@ -37,8 +37,8 @@ export function exportToPDF(
   doc.setFontSize(14);
   doc.text('Summary', 14, 62);
   doc.setFontSize(11);
-  doc.text(`Total Loans (Current Value): ${currencySymbol}${totalLoans.toFixed(2)}`, 14, 69);
-  doc.text(`Total Repayments (Current Value): ${currencySymbol}${totalRepayments.toFixed(2)}`, 14, 76);
+  doc.text(`Total Lent (Current Value): ${currencySymbol}${totalLent.toFixed(2)}`, 14, 69);
+  doc.text(`Total Borrowed (Current Value): ${currencySymbol}${totalBorrowed.toFixed(2)}`, 14, 76);
   doc.text(`Net Outstanding Balance: ${currencySymbol}${netBalance.toFixed(2)}`, 14, 83);
 
   // Transactions Table
@@ -46,7 +46,7 @@ export function exportToPDF(
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     return [
       formatDateForDisplay(transaction.date),
-      transaction.type === 'loan' ? 'Loan' : 'Repayment',
+      transaction.type === 'lend' ? 'Lend' : 'Borrow',
       `${currencySymbol}${transaction.amount.toFixed(2)}`,
       `${transaction.interestRate}%`,
       transaction.notes || '-',
@@ -76,7 +76,7 @@ export function exportToCSV(
   transactions: Transaction[],
   asOfDate: Date
 ): void {
-  const { totalLoans, totalRepayments, netBalance } = calculateTotalBalance(
+  const { totalLent, totalBorrowed, netBalance } = calculateTotalBalance(
     transactions,
     asOfDate
   );
@@ -87,7 +87,7 @@ export function exportToCSV(
     const breakdown = calculateCurrentValue(transaction, asOfDate);
     return {
       Date: formatDateForDisplay(transaction.date),
-      Type: transaction.type === 'loan' ? 'Loan' : 'Repayment',
+      Type: transaction.type === 'lend' ? 'Lend' : 'Borrow',
       Amount: transaction.amount.toFixed(2),
       'Interest Rate (%)': transaction.interestRate,
       Notes: transaction.notes || '',
@@ -115,7 +115,7 @@ export function exportToCSV(
       'Current Value': '',
     },
     {
-      Date: 'Total Loans',
+      Date: 'Total Lent',
       Type: '',
       Amount: '',
       'Interest Rate (%)': '',
@@ -124,10 +124,10 @@ export function exportToCSV(
       'Years Interest': '',
       'Months Interest': '',
       'Days Interest': '',
-      'Current Value': totalLoans.toFixed(2),
+      'Current Value': totalLent.toFixed(2),
     },
     {
-      Date: 'Total Repayments',
+      Date: 'Total Borrowed',
       Type: '',
       Amount: '',
       'Interest Rate (%)': '',
@@ -136,7 +136,7 @@ export function exportToCSV(
       'Years Interest': '',
       'Months Interest': '',
       'Days Interest': '',
-      'Current Value': totalRepayments.toFixed(2),
+      'Current Value': totalBorrowed.toFixed(2),
     },
     {
       Date: 'Net Outstanding Balance',
@@ -212,8 +212,8 @@ export function importFromCSV(
           }
 
           const type = (row.Type || row.type || '').toLowerCase();
-          if (type !== 'loan' && type !== 'repayment') {
-            throw new Error(`Invalid type: ${type}. Must be "Loan" or "Repayment"`);
+          if (type !== 'lend' && type !== 'borrow') {
+            throw new Error(`Invalid type: ${type}. Must be "Lend" or "Borrow"`);
           }
 
           const amount = parseFloat(row.Amount || row.amount || '0');
@@ -231,8 +231,9 @@ export function importFromCSV(
             date,
             amount,
             interestRate,
-            type: type as 'loan' | 'repayment',
+            type: type as 'lend' | 'borrow',
             notes: row.Notes || row.notes || '',
+            completed: false,
           };
         });
 

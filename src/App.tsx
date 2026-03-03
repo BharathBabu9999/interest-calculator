@@ -20,48 +20,54 @@ const sampleTransactions: Transaction[] = [
     date: new Date(2020, 0, 1), // Jan 1, 2020
     amount: 1000,
     interestRate: 2,
-    type: "loan",
-    notes: "Initial loan",
+    type: "lend",
+    notes: "Initial lend",
+    completed: false,
   },
   {
     id: "2",
     date: new Date(2020, 0, 21), // Jan 21, 2020
     amount: 100,
     interestRate: 2,
-    type: "loan",
-    notes: "Additional loan",
+    type: "lend",
+    notes: "Additional lend",
+    completed: false,
   },
   {
     id: "3",
     date: new Date(2020, 8, 16), // Sep 16, 2020
     amount: 1000,
     interestRate: 2,
-    type: "loan",
-    notes: "Third loan",
+    type: "lend",
+    notes: "Third lend",
+    completed: false,
   },
   {
     id: "4",
     date: new Date(2020, 4, 1), // May 1, 2020
     amount: 100,
     interestRate: 2,
-    type: "repayment",
+    type: "borrow",
     notes: "First payment",
+    completed: false,
   },
   {
     id: "5",
     date: new Date(2021, 0, 21), // Jan 21, 2021
     amount: 900,
     interestRate: 2,
-    type: "repayment",
+    type: "borrow",
     notes: "Second payment",
+    completed: false,
   },
   {
     id: "6",
     date: new Date(2022, 8, 16), // Sep 16, 2022
     amount: 1000,
     interestRate: 2,
-    type: "repayment",
+    type: "borrow",
     notes: "Third payment",
+    completed: false,
   },
 ];
 
@@ -161,7 +167,7 @@ function App() {
             Interest Calculator
           </h1>
           <p className="text-gray-600">
-            Private financing loan and repayment tracker
+            Private financing lend and borrow tracker
           </p>
         </div>
 
@@ -310,6 +316,11 @@ function App() {
           currency={client.currency}
           onDeleteTransaction={handleDeleteTransaction}
           onUpdateTransaction={handleUpdateTransaction}
+          onToggleCompleted={(id, completed) => {
+            setTransactions((prev) =>
+              prev.map((t) => (t.id === id ? { ...t, completed } : t))
+            );
+          }}
         />
 
         {/* Bulk Update Modal */}

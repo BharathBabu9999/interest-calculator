@@ -28,7 +28,7 @@ const transactionSchema = z.object({
   date: dateStringSchema,
   amount: z.number().positive('Amount must be positive'),
   interestRate: z.number().min(0, 'Interest rate must be non-negative'),
-  type: z.enum(['loan', 'repayment']),
+  type: z.enum(['lend', 'borrow']),
   notes: z.string(),
 });
 
@@ -52,7 +52,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       date: formatDateForDisplay(new Date()),
       amount: 0,
       interestRate: 2,
-      type: 'loan',
+      type: 'lend',
       notes: '',
     },
   });
@@ -69,6 +69,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       interestRate: data.interestRate,
       type: data.type,
       notes: data.notes,
+      completed: false,
     };
 
     onAddTransaction(transaction);
@@ -76,15 +77,15 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
   };
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-6">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition"
+        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition"
       >
-        <h2 className="text-xl font-semibold">Add Transaction</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add Transaction</h2>
         <svg
-          className={`w-6 h-6 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-6 h-6 text-gray-500 dark:text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -94,16 +95,16 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       </button>
       
       {isOpen && (
-        <div className="px-6 pb-6 pt-2 border-t">
+        <div className="px-6 pb-6 pt-2 border-t dark:border-slate-700">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date (DD/MM/YYYY)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date (DD/MM/YYYY)</label>
             <input
               type="text"
               placeholder="DD/MM/YYYY"
               {...register('date')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={10}
             />
             {errors.date && (
@@ -112,12 +113,12 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Amount</label>
             <input
               type="number"
               step="0.01"
               {...register('amount', { valueAsNumber: true })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             {errors.amount && (
               <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>
@@ -125,14 +126,14 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
               Interest Rate (% per month)
             </label>
             <input
               type="number"
               step="0.01"
               {...register('interestRate', { valueAsNumber: true })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             {errors.interestRate && (
               <p className="text-red-500 text-xs mt-1">{errors.interestRate.message}</p>
@@ -140,13 +141,13 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Type</label>
             <select
               {...register('type')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="loan">Loan</option>
-              <option value="repayment">Repayment</option>
+              <option value="lend">Lend</option>
+              <option value="borrow">Borrow</option>
             </select>
             {errors.type && (
               <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>
@@ -154,11 +155,11 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Notes</label>
             <input
               type="text"
               {...register('notes')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
