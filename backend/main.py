@@ -13,8 +13,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:4173",
-        "https://interest-calc.pages.dev",      # Replace with your actual Cloudflare Pages URL after creating the project
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # covers all Vercel preview + production URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
