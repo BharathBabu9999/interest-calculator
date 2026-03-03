@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Transaction, Client } from "./types";
 import { formatDateForInput } from "./utils/dateUtils";
 import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
+import ThemeToggle from "./components/ThemeToggle";
 import PrivacyPolicy from "./components/PrivacyPolicy";
 import {
   IntroSection,
@@ -12,6 +14,27 @@ import {
   Footer,
 } from "./components/ContentSections";
 import { exportToPDF, exportToCSV, importFromCSV } from "./utils/export";
+
+const GUEST_CLIENT_KEY = "guest_client";
+const GUEST_TX_KEY = "guest_transactions";
+
+function loadGuestClient(): Client {
+  try {
+    const raw = localStorage.getItem(GUEST_CLIENT_KEY);
+    if (raw) return JSON.parse(raw) as Client;
+  } catch {}
+  return { name: "Guest Client", id: "GUEST-001", currency: "INR" };
+}
+
+function loadGuestTransactions(): Transaction[] {
+  try {
+    const raw = localStorage.getItem(GUEST_TX_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Array<Omit<Transaction, "date"> & { date: string }>;
+    return parsed.map((t) => ({ ...t, date: new Date(t.date) }));
+  } catch {}
+  return [];
+}
 
 // Example/sample transactions
 const sampleTransactions: Transaction[] = [
@@ -72,17 +95,22 @@ const sampleTransactions: Transaction[] = [
 ];
 
 function App() {
-  const [client, setClient] = useState<Client>({
-    name: "John Doe",
-    id: "CLIENT-001",
-    currency: "INR",
-  });
+  const navigate = useNavigate();
+  const [client, setClient] = useState<Client>(loadGuestClient);
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
-  const [transactions, setTransactions] =
-    useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(loadGuestTransactions);
   const [sortOrder, setSortOrder] = useState<"chronological" | "entry">(
     "chronological"
   );
+
+  // Persist guest data to localStorage
+  useEffect(() => {
+    localStorage.setItem(GUEST_CLIENT_KEY, JSON.stringify(client));
+  }, [client]);
+
+  useEffect(() => {
+    localStorage.setItem(GUEST_TX_KEY, JSON.stringify(transactions));
+  }, [transactions]);
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
   const [newBulkRate, setNewBulkRate] = useState("");
 
@@ -160,15 +188,41 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Interest Calculator
-          </h1>
-          <p className="text-gray-600">
-            Private financing lend and borrow tracker
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      {/* Guest mode banner */}
+      <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700/40 px-4 py-2.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            <span className="font-semibold">Guest mode</span> — data is saved in this browser only.
           </p>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => navigate("/login")}
+              className="text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => navigate("/register")}
+              className="text-sm font-medium bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-md transition-colors"
+            >
+              Create account
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Interest Calculator
+            </h1>
+            <p className="text-gray-600 dark:text-slate-400">
+              Private financing lend and borrow tracker
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* Client Info */}

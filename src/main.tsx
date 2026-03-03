@@ -9,6 +9,7 @@ import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientPage from './pages/ClientPage'
 import SummaryPage from './pages/SummaryPage'
+import App from './App'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/guest" element={<App />} />
           <Route
             path="/"
             element={

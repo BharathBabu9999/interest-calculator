@@ -106,6 +106,19 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        <div className="relative flex items-center my-5">
+          <div className="flex-grow border-t border-gray-300 dark:border-slate-600" />
+          <span className="px-3 text-xs text-gray-400 dark:text-slate-500">or</span>
+          <div className="flex-grow border-t border-gray-300 dark:border-slate-600" />
+        </div>
+
+        <Link
+          to="/guest"
+          className="block w-full text-center py-2.5 px-4 text-sm font-medium text-gray-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition-colors"
+        >
+          Continue as Guest
+        </Link>
       </div>
     </div>
   );
