@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { clientsApi, type ClientRead, type ClientCreate } from "../api/clients";
+import { transactionsApi } from "../api/transactions";
+import { calculateTotalBalance } from "../utils/calculator";
+import { formatCurrency } from "../utils/currency";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -26,6 +29,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [amountOp, setAmountOp] = useState<"" | ">" | "<">("");
+  const [amountVal, setAmountVal] = useState("");
+  const [clientBalances, setClientBalances] = useState<Record<string, number>>({});
+  const [balancesLoading, setBalancesLoading] = useState(false);
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -50,9 +57,42 @@ export default function DashboardPage() {
     }
   }, []);
 
+  // Fetch net balances for all clients
+  const fetchBalances = useCallback(async (clientList: ClientRead[]) => {
+    if (clientList.length === 0) return;
+    setBalancesLoading(true);
+    const now = new Date();
+    try {
+      const txLists = await Promise.all(clientList.map((c) => transactionsApi.list(c.id)));
+      const map: Record<string, number> = {};
+      clientList.forEach((c, i) => {
+        const transactions = txLists[i].map((tx) => ({
+          id: tx.id,
+          date: new Date(`${tx.date}T00:00:00`),
+          amount: tx.amount,
+          interestRate: tx.interest_rate,
+          type: tx.type as "lend" | "borrow",
+          notes: tx.notes ?? "",
+          completed: tx.completed ?? false,
+        }));
+        const { netBalance } = calculateTotalBalance(transactions, now);
+        map[c.id] = netBalance;
+      });
+      setClientBalances(map);
+    } catch {
+      // silently ignore — balances are optional
+    } finally {
+      setBalancesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  useEffect(() => {
+    if (!loading && clients.length > 0) fetchBalances(clients);
+  }, [clients, loading, fetchBalances]);
 
   const openCreate = () => {
     setEditingClient(null);
@@ -163,14 +203,34 @@ export default function DashboardPage() {
 
         {/* Search */}
         {!loading && clients.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col sm:flex-row gap-3">
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients…"
-              className="w-full sm:w-72 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Name, phone, email, address…"
+              className="w-full sm:w-80 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            <div className="flex gap-0">
+              <select
+                value={amountOp}
+                onChange={(e) => setAmountOp(e.target.value as "" | ">" | "<")}
+                className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 border-r-0 text-gray-900 dark:text-white rounded-l-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10"
+              >
+                <option value="">Net Amount</option>
+                <option value=">">Greater than</option>
+                <option value="<">Less than</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                value={amountVal}
+                onChange={(e) => setAmountVal(e.target.value)}
+                placeholder="Amount"
+                disabled={amountOp === ""}
+                className="w-32 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-r-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40"
+              />
+            </div>
           </div>
         )}
 
@@ -201,14 +261,25 @@ export default function DashboardPage() {
 
         {/* Client grid */}
         {!loading && clients.length > 0 && (() => {
-          const filtered = clients.filter((c) =>
-            c.name.toLowerCase().includes(search.toLowerCase())
-          );
+          const textQuery = search.trim().toLowerCase();
+          const numVal = amountVal !== "" ? parseFloat(amountVal) : null;
+
+          const filtered = clients.filter((c) => {
+            const textOk = !textQuery ||
+              c.name.toLowerCase().includes(textQuery) ||
+              (c.phone ?? "").toLowerCase().includes(textQuery) ||
+              (c.email ?? "").toLowerCase().includes(textQuery) ||
+              (c.address ?? "").toLowerCase().includes(textQuery);
+            const net = clientBalances[c.id] ?? 0;
+            const amountOk = !amountOp || numVal === null ||
+              (amountOp === ">" ? net > numVal : net < numVal);
+            return textOk && amountOk;
+          });
           return (
             <>
               {filtered.length === 0 && (
                 <div className="text-gray-400 dark:text-slate-400 text-center py-12 text-sm">
-                  No clients match &ldquo;{search}&rdquo;
+                  No clients match{search ? <> &ldquo;{search}&rdquo;</> : ""}{amountOp && amountVal ? <> with net {amountOp} {amountVal}</> : ""}
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -275,11 +346,22 @@ export default function DashboardPage() {
                     )}
                   </div>
                 )}
-                  <div className="mt-auto pt-2 border-t border-gray-200 dark:border-slate-700">
+                  <div className="mt-auto pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
                     <span className="text-blue-600 dark:text-blue-400 text-xs font-medium group-hover:underline">
-                    View transactions →
-                  </span>
-                </div>
+                      View transactions →
+                    </span>
+                    {client.id in clientBalances ? (
+                      <span className={`text-xs font-semibold ${
+                        clientBalances[client.id] > 0 ? "text-green-600 dark:text-green-400" :
+                        clientBalances[client.id] < 0 ? "text-red-500 dark:text-red-400" :
+                        "text-gray-400 dark:text-slate-500"
+                      }`}>
+                        {clientBalances[client.id] > 0 ? "+" : ""}{formatCurrency(clientBalances[client.id], client.currency)}
+                      </span>
+                    ) : balancesLoading ? (
+                      <span className="text-xs text-gray-300 dark:text-slate-600">…</span>
+                    ) : null}
+                  </div>
               </div>
                 ))}
               </div>
