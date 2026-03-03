@@ -14,7 +14,7 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Per-client currency** — each client can have a different currency (INR, USD, EUR, GBP, JPY, AUD, CAD)
 - **Contact details** — store phone, email, address, and company per client
 - **Editable notes** — attach and edit free-text notes on each client page
-- **File attachments** — upload documents (images, PDF, Word, Excel, PowerPoint, CSV) per client with thumbnail previews, upload date/time, and per-file descriptions
+- **File attachments** — upload documents (images, PDF, Word, Excel, PowerPoint, CSV) per client with thumbnail previews, upload date/time, and per-file descriptions; images larger than 3 MB are automatically compressed client-side before upload
 - **Full CRUD** — create, edit, and delete clients from the dashboard
 
 ### Transaction Tracking (per client)
@@ -30,6 +30,11 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **As-of-date filter** — recalculate all balances as of any date
 - **Per-currency grouping** — grand totals grouped by currency
 - **Click-through** — click any client row to jump straight to their transaction page
+
+### Guest Mode
+- **Try without registering** — visit `/guest` to use the full calculator with localStorage-only persistence (no account needed)
+- **Amber banner** — persistent reminder with links to sign in or create an account
+- **No data loss on navigation** — guest client and transactions are saved to `localStorage` automatically
 
 ### UI & Theme
 - **Dark / light mode** — toggle at the top of every page; preference saved to localStorage
@@ -219,6 +224,7 @@ interest-calc/
 |---|---|---|
 | `/login` | Sign in | No |
 | `/register` | Create account | No |
+| `/guest` | Guest mode — full calculator with localStorage persistence | No |
 | `/` | Dashboard — client list | Yes |
 | `/clients/:id` | Transactions for a client | Yes |
 | `/summary` | Portfolio summary across all clients | Yes |
