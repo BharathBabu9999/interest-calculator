@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: interest-calc-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false        # Set this in the Render dashboard — your Neon connection string
+      - key: SECRET_KEY
+        sync: false        # Set this in the Render dashboard — run: python3 -c "import secrets; print(secrets.token_hex(32))"

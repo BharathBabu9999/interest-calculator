@@ -526,7 +526,9 @@ export default function ClientPage() {
           </div>
         </div>
 
-        {clientId && <ClientFiles clientId={clientId} />}
+        {clientId && import.meta.env.VITE_ENABLE_FILES !== "false" && (
+          <ClientFiles clientId={clientId} />
+        )}
 
         <HowToUseSection />
         <IntroSection />
