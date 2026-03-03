@@ -5,6 +5,7 @@ import { transactionsApi, type TransactionRead } from "../api/transactions";
 import { calculateTotalBalance } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
 import { formatDateForInput } from "../utils/dateUtils";
+import { exportSummaryToPDF, exportSummaryToExcel, type SummaryExportRow } from "../utils/export";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 import type { Transaction } from "../types";
@@ -39,8 +40,31 @@ export default function SummaryPage() {
 
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [summaries, setSummaries] = useState<ClientSummary[]>([]);
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [sortCol, setSortCol] = useState<"name" | "txCount" | "totalLent" | "totalBorrowed" | "netBalance">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleExcluded = (id: string) =>
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+
+  const handleSort = (col: typeof sortCol) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  };
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -87,6 +111,7 @@ export default function SummaryPage() {
   const totalsMap = summaries.reduce<
     Record<string, { lent: number; borrowed: number; net: number }>
   >((acc, { client, totalLent, totalBorrowed, netBalance }) => {
+    if (excluded.has(client.id)) return acc;
     const cur = client.currency;
     if (!acc[cur]) acc[cur] = { lent: 0, borrowed: 0, net: 0 };
     acc[cur].lent += totalLent;
@@ -98,6 +123,31 @@ export default function SummaryPage() {
   const grandTotals = Object.entries(totalsMap).sort(([a], [b]) =>
     a.localeCompare(b)
   );
+
+  // ── sorted rows ──────────────────────────────────────────────────────────────
+
+  const sortedSummaries = [...summaries].sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === "name") cmp = a.client.name.localeCompare(b.client.name);
+    else if (sortCol === "txCount") cmp = a.txCount - b.txCount;
+    else if (sortCol === "totalLent") cmp = a.totalLent - b.totalLent;
+    else if (sortCol === "totalBorrowed") cmp = a.totalBorrowed - b.totalBorrowed;
+    else if (sortCol === "netBalance") cmp = a.netBalance - b.netBalance;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  // ── export helpers ──────────────────────────────────────────────────────────
+
+  const buildExportRows = (): SummaryExportRow[] =>
+    sortedSummaries.map(({ client, totalLent, totalBorrowed, netBalance, txCount }) => ({
+      name: client.name,
+      currency: client.currency,
+      txCount,
+      totalLent,
+      totalBorrowed,
+      netBalance,
+      included: !excluded.has(client.id),
+    }));
 
   // ── render ───────────────────────────────────────────────────────────────────
 
@@ -141,7 +191,7 @@ export default function SummaryPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Title + date picker */}
+        {/* Title + date picker + export buttons */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -151,18 +201,44 @@ export default function SummaryPage() {
               Net financial position across all clients
             </p>
           </div>
-          <div className="shrink-0">
-            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
-              As of Date
-            </label>
-            <input
-              type="date"
-              value={formatDateForInput(asOfDate)}
-              onChange={(e) =>
-                setAsOfDate(new Date(e.target.value + "T00:00:00"))
-              }
-              className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div className="flex items-end gap-3 shrink-0">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+                As of Date
+              </label>
+              <input
+                type="date"
+                value={formatDateForInput(asOfDate)}
+                onChange={(e) =>
+                  setAsOfDate(new Date(e.target.value + "T00:00:00"))
+                }
+                className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            {!loading && sortedSummaries.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportSummaryToPDF(buildExportRows(), asOfDate)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+                  title="Download PDF"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  PDF
+                </button>
+                <button
+                  onClick={() => exportSummaryToExcel(buildExportRows(), asOfDate)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                  title="Download Excel"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Excel
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -258,20 +334,38 @@ export default function SummaryPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
             {/* Table header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-              <div className="col-span-4">Client</div>
-              <div className="col-span-1 text-center">Txns</div>
-              <div className="col-span-2 text-right">Total Lent</div>
-              <div className="col-span-2 text-right">Total Borrowed</div>
-              <div className="col-span-2 text-right">Net Balance</div>
-              <div className="col-span-1" />
+              {([
+                ["name", "Client", "col-span-4 text-left"],
+                ["txCount", "Txns", "col-span-1 text-center"],
+                ["totalLent", "Total Lent", "col-span-2 text-right"],
+                ["totalBorrowed", "Total Borrowed", "col-span-2 text-right"],
+                ["netBalance", "Net Balance", "col-span-2 text-right"],
+              ] as const).map(([col, label, cls]) => (
+                <button
+                  key={col}
+                  onClick={() => handleSort(col)}
+                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors ${
+                    col === "txCount" || col === "totalLent" || col === "totalBorrowed" || col === "netBalance" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {label}
+                  <span className="inline-flex flex-col leading-none">
+                    <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === col && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                    <svg className={`w-2.5 h-2.5 ${sortCol === col && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                  </span>
+                </button>
+              ))}
+              <div className="col-span-1 text-center">Include</div>
             </div>
 
             {/* Rows */}
-            {summaries.map(
+            {sortedSummaries.map(
               ({ client, totalLent, totalBorrowed, netBalance, txCount }) => (
                 <div
                   key={client.id}
-                  className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 last:border-0 items-center hover:bg-gray-50/60 dark:hover:bg-slate-700/30 transition-colors group cursor-pointer"
+                  className={`grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 last:border-0 items-center hover:bg-gray-50/60 dark:hover:bg-slate-700/30 transition-colors group cursor-pointer ${
+                    excluded.has(client.id) ? "opacity-40" : ""
+                  }`}
                   onClick={() => navigate(`/clients/${client.id}`)}
                 >
                   {/* Client name */}
@@ -327,11 +421,18 @@ export default function SummaryPage() {
                     )}
                   </div>
 
-                  {/* Arrow */}
-                  <div className="col-span-1 text-right">
-                    <span className="text-gray-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors text-sm">
-                      →
-                    </span>
+                  {/* Include toggle */}
+                  <div
+                    className="col-span-1 flex justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!excluded.has(client.id)}
+                      onChange={() => toggleExcluded(client.id)}
+                      className="w-4 h-4 accent-blue-600 cursor-pointer"
+                      title={excluded.has(client.id) ? "Excluded from totals" : "Included in totals"}
+                    />
                   </div>
                 </div>
               )

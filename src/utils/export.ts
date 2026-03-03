@@ -1,10 +1,132 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import type { Client, Transaction } from '../types';
 import { calculateCurrentValue, calculateTotalBalance } from './calculator';
-import { getCurrencySymbol } from './currency';
+import { getCurrencySymbol, formatCurrency } from './currency';
 import { formatDateForDisplay } from './dateUtils';
+
+// ── Portfolio Summary exports ─────────────────────────────────────────────────
+
+export interface SummaryExportRow {
+  name: string;
+  currency: string;
+  txCount: number;
+  totalLent: number;
+  totalBorrowed: number;
+  netBalance: number;
+  included: boolean;
+}
+
+function grandTotalsFromRows(rows: SummaryExportRow[]) {
+  const map: Record<string, { lent: number; borrowed: number; net: number }> = {};
+  for (const r of rows) {
+    if (!r.included) continue;
+    if (!map[r.currency]) map[r.currency] = { lent: 0, borrowed: 0, net: 0 };
+    map[r.currency].lent += r.totalLent;
+    map[r.currency].borrowed += r.totalBorrowed;
+    map[r.currency].net += r.netBalance;
+  }
+  return map;
+}
+
+export function exportSummaryToPDF(rows: SummaryExportRow[], asOfDate: Date): void {
+  const doc = new jsPDF({ orientation: 'landscape' });
+  const dateStr = formatDateForDisplay(asOfDate);
+
+  doc.setFontSize(18);
+  doc.text('Portfolio Summary', 14, 18);
+  doc.setFontSize(10);
+  doc.setTextColor(120);
+  doc.text(`As of: ${dateStr}`, 14, 26);
+  doc.setTextColor(0);
+
+  // Per-client table
+  autoTable(doc, {
+    startY: 32,
+    head: [['Client', 'Currency', 'Txns', 'Total Lent', 'Total Borrowed', 'Net Balance', 'Included']],
+    body: rows.map((r) => [
+      r.name,
+      r.currency,
+      r.txCount,
+      formatCurrency(r.totalLent, r.currency),
+      formatCurrency(r.totalBorrowed, r.currency),
+      formatCurrency(r.netBalance, r.currency),
+      r.included ? 'Yes' : 'No',
+    ]),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [59, 130, 246] },
+    columnStyles: {
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right' },
+      6: { halign: 'center' },
+    },
+  });
+
+  // Grand totals table
+  const totals = grandTotalsFromRows(rows);
+  const lastY = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFontSize(11);
+  doc.text('Grand Totals (included clients only)', 14, lastY);
+
+  autoTable(doc, {
+    startY: lastY + 4,
+    head: [['Currency', 'Total Lent', 'Total Borrowed', 'Net Balance']],
+    body: Object.entries(totals).map(([cur, t]) => [
+      cur,
+      formatCurrency(t.lent, cur),
+      formatCurrency(t.borrowed, cur),
+      formatCurrency(t.net, cur),
+    ]),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [100, 116, 139] },
+    columnStyles: {
+      1: { halign: 'right' },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+    },
+  });
+
+  doc.save(`portfolio-summary-${dateStr.replace(/\s/g, '-')}.pdf`);
+}
+
+export function exportSummaryToExcel(rows: SummaryExportRow[], asOfDate: Date): void {
+  const dateStr = formatDateForDisplay(asOfDate);
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1 — per-client detail
+  const clientData = [
+    ['Client', 'Currency', 'Transactions', 'Total Lent', 'Total Borrowed', 'Net Balance', 'Included in Totals'],
+    ...rows.map((r) => [
+      r.name,
+      r.currency,
+      r.txCount,
+      r.totalLent,
+      r.totalBorrowed,
+      r.netBalance,
+      r.included ? 'Yes' : 'No',
+    ]),
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(clientData);
+  ws1['!cols'] = [20, 10, 12, 16, 18, 16, 20].map((w) => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Clients');
+
+  // Sheet 2 — grand totals
+  const totals = grandTotalsFromRows(rows);
+  const totalsData = [
+    [`Portfolio Summary — As of ${dateStr}`],
+    [],
+    ['Currency', 'Total Lent', 'Total Borrowed', 'Net Balance'],
+    ...Object.entries(totals).map(([cur, t]) => [cur, t.lent, t.borrowed, t.net]),
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(totalsData);
+  ws2['!cols'] = [12, 16, 18, 16].map((w) => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws2, 'Grand Totals');
+
+  XLSX.writeFile(wb, `portfolio-summary-${dateStr.replace(/\s/g, '-')}.xlsx`);
+}
 
 /**
  * Export transactions and calculations to PDF

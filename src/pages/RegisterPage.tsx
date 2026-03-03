@@ -41,7 +41,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-100 to-gray-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4 transition-colors">
+    <div className="relative min-h-screen bg-linear-to-br from-gray-100 to-gray-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4 transition-colors">
       {/* Theme toggle */}
       <div className="absolute top-4 right-4">
         <ThemeToggle />
@@ -131,9 +131,9 @@ export default function RegisterPage() {
         </div>
 
         <div className="relative flex items-center my-5">
-          <div className="flex-grow border-t border-gray-300 dark:border-slate-600" />
+          <div className="grow border-t border-gray-300 dark:border-slate-600" />
           <span className="px-3 text-xs text-gray-400 dark:text-slate-500">or</span>
-          <div className="flex-grow border-t border-gray-300 dark:border-slate-600" />
+          <div className="grow border-t border-gray-300 dark:border-slate-600" />
         </div>
 
         <Link
