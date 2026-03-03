@@ -13,8 +13,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:4173",
-        "https://finances.vlteluru.com",        # Cloudflare Pages custom domain
-        "https://interest-calc.pages.dev",      # Cloudflare Pages default URL (update after creating the Pages project)
+        "https://interest-calc.pages.dev",      # Replace with your actual Cloudflare Pages URL after creating the project
     ],
     allow_credentials=True,
     allow_methods=["*"],
