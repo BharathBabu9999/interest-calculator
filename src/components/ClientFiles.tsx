@@ -21,6 +21,55 @@ function formatDateTime(iso: string): string {
   });
 }
 
+async function compressImageIfNeeded(file: File): Promise<File> {
+  const THREE_MB = 3 * 1024 * 1024;
+  if (!file.type.startsWith("image/") || file.size <= THREE_MB) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(file);
+      ctx.drawImage(img, 0, 0);
+
+      // Use JPEG for compression even if original is PNG (better compression ratio)
+      const outputType = file.type === "image/png" ? "image/jpeg" : file.type;
+      let quality = 0.8;
+      const attempt = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            if (blob.size <= THREE_MB || quality <= 0.3) {
+              // Use .jpg extension when converting PNG → JPEG
+              const name =
+                outputType !== file.type
+                  ? file.name.replace(/\.png$/i, ".jpg")
+                  : file.name;
+              resolve(new File([blob], name, { type: outputType }));
+            } else {
+              quality -= 0.1;
+              attempt();
+            }
+          },
+          outputType,
+          quality
+        );
+      };
+      attempt();
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file); // fall back to original on error
+    };
+    img.src = url;
+  });
+}
+
 function FileTypeIcon({ mimetype }: { mimetype: string }) {
   if (mimetype === "application/pdf")
     return (
@@ -266,7 +315,8 @@ export default function ClientFiles({ clientId }: ClientFilesProps) {
     setError(null);
     try {
       for (const file of Array.from(fileList)) {
-        const created = await filesApi.upload(clientId, file);
+        const compressed = await compressImageIfNeeded(file);
+        const created = await filesApi.upload(clientId, compressed);
         setFiles((prev) => [...prev, created]);
         loadThumbnail(created);
       }
