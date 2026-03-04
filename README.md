@@ -21,6 +21,7 @@ A full-stack React + FastAPI application for managing private financing — trac
 ### Transaction Tracking (per client)
 - **Dual transaction types** — **Lend** (money given out) and **Borrow** (money received)
 - **Variable interest rates** — each transaction has its own monthly rate
+- **Expected repayment date** — optionally record when a transaction is expected to be settled; displayed in the table and editable inline
 - **Completed flag** — mark a transaction as completed to exclude it from net balance calculations (shown dimmed with strikethrough)
 - **CSV import/export** — bulk import transactions from spreadsheets; export to CSV or PDF
 - **Inline editing** — edit any transaction directly in the table
@@ -156,7 +157,7 @@ The app runs at **http://localhost:5173**.
 1. Open `http://localhost:5173` → click **"Create one"** to register
 2. On the dashboard, click **"+ Add Client"** — enter a name, **client type** (Individual or Financial Institution), currency, and optional contact details
 3. Click the client card → you're in the transaction view
-4. Add **Lend** or **Borrow** transactions; interest is calculated live
+4. Add **Lend** or **Borrow** transactions; set an optional **Expected Repayment Date** in DD/MM/YYYY format; interest is calculated live
 5. Click any row to expand the step-by-step compounding breakdown
 6. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
 7. Click **"Portfolio Summary"** in the nav to see totals across all clients
@@ -239,7 +240,7 @@ interest-calc/
 ```
 User
  └── Client (name, client_type, currency, phone, email, address, company, notes)
-       ├── Transaction (date, amount, interest_rate, type, notes, completed)
+       ├── Transaction (date, amount, interest_rate, type, notes, completed, expected_repayment_date)
        └── ClientFile (original_filename, mimetype, size, description, stored on disk)
 ```
 
@@ -265,15 +266,16 @@ $$\text{New Principal} = \text{Old Principal} \times (1 + \text{rate} \times 12)
 ## 📝 CSV Import Format
 
 ```
-Date,Amount,Interest Rate,Type,Notes
-19/03/2019,450000,1.5,lend,Initial funding
-10/04/2021,100000,2,lend,
-15/06/2024,50000,1.8,borrow,Partial payment
+Date,Amount,Interest Rate,Type,Notes,Expected Repayment Date
+19/03/2019,450000,1.5,lend,Initial funding,
+10/04/2021,100000,2,lend,,31/12/2026
+15/06/2024,50000,1.8,borrow,Partial payment,
 ```
 
 - **Date**: DD/MM/YYYY (also accepts YYYY-MM-DD)
 - **Interest Rate**: monthly percentage (e.g. `2` = 2% per month)
 - **Type**: `lend` or `borrow`
+- **Expected Repayment Date**: optional, DD/MM/YYYY (leave blank to omit)
 
 ---
 
