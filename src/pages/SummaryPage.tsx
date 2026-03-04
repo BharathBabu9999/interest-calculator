@@ -41,10 +41,13 @@ export default function SummaryPage() {
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [summaries, setSummaries] = useState<ClientSummary[]>([]);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
-  const [sortCol, setSortCol] = useState<"name" | "txCount" | "totalLent" | "totalBorrowed" | "netBalance">("name");
+  const [sortCol, setSortCol] = useState<"name" | "clientType" | "txCount" | "totalLent" | "totalBorrowed" | "netBalance">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clientTypeFilter, setClientTypeFilter] = useState<"" | "individual" | "financial_institution">("");
+  const [netBalanceOp, setNetBalanceOp] = useState<"" | ">" | "<">("");
+  const [netBalanceVal, setNetBalanceVal] = useState("");
 
   const toggleExcluded = (id: string) =>
     setExcluded((prev) => {
@@ -106,9 +109,32 @@ export default function SummaryPage() {
     fetchAll();
   }, [fetchAll]);
 
+  // ── sorted rows ──────────────────────────────────────────────────────────────
+
+  const sortedSummaries = [...summaries].sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === "name") cmp = a.client.name.localeCompare(b.client.name);
+    else if (sortCol === "clientType") cmp = a.client.client_type.localeCompare(b.client.client_type);
+    else if (sortCol === "txCount") cmp = a.txCount - b.txCount;
+    else if (sortCol === "totalLent") cmp = a.totalLent - b.totalLent;
+    else if (sortCol === "totalBorrowed") cmp = a.totalBorrowed - b.totalBorrowed;
+    else if (sortCol === "netBalance") cmp = a.netBalance - b.netBalance;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
+  // ── filtered rows ─────────────────────────────────────────────────────────────
+
+  const numVal = netBalanceVal !== "" ? parseFloat(netBalanceVal) : null;
+  const filteredSummaries = sortedSummaries.filter(({ client, netBalance }) => {
+    const typeOk = !clientTypeFilter || client.client_type === clientTypeFilter;
+    const balOk = !netBalanceOp || numVal === null ||
+      (netBalanceOp === ">" ? netBalance > numVal : netBalance < numVal);
+    return typeOk && balOk;
+  });
+
   // ── grand totals grouped by currency ────────────────────────────────────────
 
-  const totalsMap = summaries.reduce<
+  const totalsMap = filteredSummaries.reduce<
     Record<string, { lent: number; borrowed: number; net: number }>
   >((acc, { client, totalLent, totalBorrowed, netBalance }) => {
     if (excluded.has(client.id)) return acc;
@@ -124,22 +150,10 @@ export default function SummaryPage() {
     a.localeCompare(b)
   );
 
-  // ── sorted rows ──────────────────────────────────────────────────────────────
-
-  const sortedSummaries = [...summaries].sort((a, b) => {
-    let cmp = 0;
-    if (sortCol === "name") cmp = a.client.name.localeCompare(b.client.name);
-    else if (sortCol === "txCount") cmp = a.txCount - b.txCount;
-    else if (sortCol === "totalLent") cmp = a.totalLent - b.totalLent;
-    else if (sortCol === "totalBorrowed") cmp = a.totalBorrowed - b.totalBorrowed;
-    else if (sortCol === "netBalance") cmp = a.netBalance - b.netBalance;
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
   // ── export helpers ──────────────────────────────────────────────────────────
 
   const buildExportRows = (): SummaryExportRow[] =>
-    sortedSummaries.map(({ client, totalLent, totalBorrowed, netBalance, txCount }) => ({
+    filteredSummaries.map(({ client, totalLent, totalBorrowed, netBalance, txCount }) => ({
       name: client.name,
       currency: client.currency,
       txCount,
@@ -249,6 +263,41 @@ export default function SummaryPage() {
           </div>
         )}
 
+        {/* Filters */}
+        {!loading && summaries.length > 0 && (
+          <div className="mb-6 flex flex-col sm:flex-row gap-3">
+            <select
+              value={clientTypeFilter}
+              onChange={(e) => setClientTypeFilter(e.target.value as "" | "individual" | "financial_institution")}
+              className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Types</option>
+              <option value="individual">Individual</option>
+              <option value="financial_institution">Financial Institution</option>
+            </select>
+            <div className="flex gap-0">
+              <select
+                value={netBalanceOp}
+                onChange={(e) => setNetBalanceOp(e.target.value as "" | ">" | "<")}
+                className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 border-r-0 text-gray-900 dark:text-white rounded-l-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10"
+              >
+                <option value="">Net Balance</option>
+                <option value=">">Greater than</option>
+                <option value="<">Less than</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                value={netBalanceVal}
+                onChange={(e) => setNetBalanceVal(e.target.value)}
+                placeholder="Amount"
+                disabled={netBalanceOp === ""}
+                className="w-36 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-r-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40"
+              />
+            </div>
+          </div>
+        )}
+
         {/* Grand total cards */}
         {!loading && grandTotals.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -335,7 +384,31 @@ export default function SummaryPage() {
             {/* Table header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
               {([
-                ["name", "Client", "col-span-4 text-left"],
+                ["name", "Client", "col-span-3 text-left"],
+              ] as const).map(([col, label, cls]) => (
+                <button
+                  key={col}
+                  onClick={() => handleSort(col)}
+                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start`}
+                >
+                  {label}
+                  <span className="inline-flex flex-col leading-none">
+                    <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === col && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                    <svg className={`w-2.5 h-2.5 ${sortCol === col && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                  </span>
+                </button>
+              ))}
+              <button
+                onClick={() => handleSort("clientType")}
+                className="col-span-1 text-left flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start"
+              >
+                Type
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "clientType" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "clientType" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
+              {([
                 ["txCount", "Txns", "col-span-1 text-center"],
                 ["totalLent", "Total Lent", "col-span-2 text-right"],
                 ["totalBorrowed", "Total Borrowed", "col-span-2 text-right"],
@@ -344,9 +417,7 @@ export default function SummaryPage() {
                 <button
                   key={col}
                   onClick={() => handleSort(col)}
-                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors ${
-                    col === "txCount" || col === "totalLent" || col === "totalBorrowed" || col === "netBalance" ? "justify-end" : "justify-start"
-                  }`}
+                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end`}
                 >
                   {label}
                   <span className="inline-flex flex-col leading-none">
@@ -359,7 +430,12 @@ export default function SummaryPage() {
             </div>
 
             {/* Rows */}
-            {sortedSummaries.map(
+            {filteredSummaries.length === 0 && (
+              <div className="px-6 py-10 text-center text-sm text-gray-400 dark:text-slate-500">
+                No clients match the current filters.
+              </div>
+            )}
+            {filteredSummaries.map(
               ({ client, totalLent, totalBorrowed, netBalance, txCount }) => (
                 <div
                   key={client.id}
@@ -369,12 +445,19 @@ export default function SummaryPage() {
                   onClick={() => navigate(`/clients/${client.id}`)}
                 >
                   {/* Client name */}
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <p className="font-medium text-gray-900 dark:text-white truncate">
                       {client.name}
                     </p>
                     <span className="text-xs text-gray-400 dark:text-slate-500">
                       {client.currency}
+                    </span>
+                  </div>
+
+                  {/* Client type */}
+                  <div className="col-span-1">
+                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                      {client.client_type === "financial_institution" ? "Fin. Inst." : "Individual"}
                     </span>
                   </div>
 

@@ -24,6 +24,12 @@ class Client(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    client_type: Mapped[str] = mapped_column(
+        Enum("individual", "financial_institution", name="client_type_enum"),
+        nullable=False,
+        default="individual",
+        server_default="individual",
+    )
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

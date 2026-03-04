@@ -21,11 +21,14 @@ const GUEST_TX_KEY = "guest_transactions";
 function loadGuestClient(): Client {
   try {
     const raw = localStorage.getItem(GUEST_CLIENT_KEY);
-    if (raw) return JSON.parse(raw) as Client;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Client;
+      return { ...parsed, clientType: parsed.clientType ?? "individual" };
+    }
   } catch {
     // ignore parse errors
   }
-  return { name: "Guest Client", id: "GUEST-001", currency: "INR" };
+  return { name: "Guest Client", id: "GUEST-001", currency: "INR", clientType: "individual" };
 }
 
 function loadGuestTransactions(): Transaction[] {

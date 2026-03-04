@@ -6,11 +6,18 @@ import { calculateTotalBalance } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
+import type { ClientType } from "../types";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY", "AUD", "CAD"];
 
+const CLIENT_TYPES: { value: ClientType; label: string }[] = [
+  { value: "individual", label: "Individual" },
+  { value: "financial_institution", label: "Financial Institution" },
+];
+
 interface ClientFormState {
   name: string;
+  client_type: ClientType;
   currency: string;
   notes: string;
   phone: string;
@@ -19,7 +26,7 @@ interface ClientFormState {
   company: string;
 }
 
-const empty: ClientFormState = { name: "", currency: "INR", notes: "", phone: "", email: "", address: "", company: "" };
+const empty: ClientFormState = { name: "", client_type: "individual", currency: "INR", notes: "", phone: "", email: "", address: "", company: "" };
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -29,6 +36,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [clientTypeFilter, setClientTypeFilter] = useState<"" | "individual" | "financial_institution">("");
   const [amountOp, setAmountOp] = useState<"" | ">" | "<">("");
   const [amountVal, setAmountVal] = useState("");
   const [clientBalances, setClientBalances] = useState<Record<string, number>>({});
@@ -103,7 +111,7 @@ export default function DashboardPage() {
 
   const openEdit = (client: ClientRead) => {
     setEditingClient(client);
-    setForm({ name: client.name, currency: client.currency, notes: client.notes ?? "", phone: client.phone ?? "", email: client.email ?? "", address: client.address ?? "", company: client.company ?? "" });
+    setForm({ name: client.name, client_type: client.client_type, currency: client.currency, notes: client.notes ?? "", phone: client.phone ?? "", email: client.email ?? "", address: client.address ?? "", company: client.company ?? "" });
     setFormError(null);
     setModalOpen(true);
   };
@@ -125,6 +133,7 @@ export default function DashboardPage() {
     try {
       const payload: ClientCreate = {
         name: form.name.trim(),
+        client_type: form.client_type,
         currency: form.currency,
         notes: form.notes.trim() || undefined,
         phone: form.phone.trim() || undefined,
@@ -211,6 +220,15 @@ export default function DashboardPage() {
               placeholder="Name, phone, email, address…"
               className="w-full sm:w-80 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+            <select
+              value={clientTypeFilter}
+              onChange={(e) => setClientTypeFilter(e.target.value as "" | "individual" | "financial_institution")}
+              className="bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Types</option>
+              <option value="individual">Individual</option>
+              <option value="financial_institution">Financial Institution</option>
+            </select>
             <div className="flex gap-0">
               <select
                 value={amountOp}
@@ -270,10 +288,11 @@ export default function DashboardPage() {
               (c.phone ?? "").toLowerCase().includes(textQuery) ||
               (c.email ?? "").toLowerCase().includes(textQuery) ||
               (c.address ?? "").toLowerCase().includes(textQuery);
+            const typeOk = !clientTypeFilter || c.client_type === clientTypeFilter;
             const net = clientBalances[c.id] ?? 0;
             const amountOk = !amountOp || numVal === null ||
               (amountOp === ">" ? net > numVal : net < numVal);
-            return textOk && amountOk;
+            return textOk && typeOk && amountOk;
           });
           return (
             <>
@@ -297,6 +316,9 @@ export default function DashboardPage() {
                     )}
                     <span className="inline-block mt-1 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
                       {client.currency}
+                    </span>
+                    <span className="inline-block mt-1 ml-1 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
+                      {client.client_type === "financial_institution" ? "Financial Institution" : "Individual"}
                     </span>
                   </div>
                   {/* Actions */}
@@ -391,6 +413,23 @@ export default function DashboardPage() {
                   placeholder="e.g. Raj Kumar"
                   autoFocus
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Client Type
+                </label>
+                <select
+                  value={form.client_type}
+                  onChange={(e) => setForm((f) => ({ ...f, client_type: e.target.value as ClientType }))}
+                  className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {CLIENT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

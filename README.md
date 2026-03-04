@@ -11,6 +11,7 @@ A full-stack React + FastAPI application for managing private financing — trac
 
 ### Client Management
 - **Multiple clients per user** — add as many borrowers/lenders as needed
+- **Client type** — classify each client as **Individual** or **Financial Institution**; filterable on the dashboard and portfolio summary
 - **Per-client currency** — each client can have a different currency (INR, USD, EUR, GBP, JPY, AUD, CAD)
 - **Contact details** — store phone, email, address, and company per client
 - **Editable notes** — attach and edit free-text notes on each client page
@@ -28,7 +29,9 @@ A full-stack React + FastAPI application for managing private financing — trac
 ### Portfolio Summary
 - **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view
 - **As-of-date filter** — recalculate all balances as of any date
-- **Per-currency grouping** — grand totals grouped by currency
+- **Filters** — filter by client type (Individual / Financial Institution) and net balance (greater/less than an amount)
+- **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, or net balance
+- **Per-currency grouping** — grand totals grouped by currency (respects active filters)
 - **Click-through** — click any client row to jump straight to their transaction page
 
 ### Guest Mode
@@ -151,7 +154,7 @@ The app runs at **http://localhost:5173**.
 ### 7 — Try it out
 
 1. Open `http://localhost:5173` → click **"Create one"** to register
-2. On the dashboard, click **"+ Add Client"** — enter a name, currency, and optional contact details
+2. On the dashboard, click **"+ Add Client"** — enter a name, **client type** (Individual or Financial Institution), currency, and optional contact details
 3. Click the client card → you're in the transaction view
 4. Add **Lend** or **Borrow** transactions; interest is calculated live
 5. Click any row to expand the step-by-step compounding breakdown
@@ -235,7 +238,7 @@ interest-calc/
 
 ```
 User
- └── Client (name, currency, phone, email, address, company, notes)
+ └── Client (name, client_type, currency, phone, email, address, company, notes)
        ├── Transaction (date, amount, interest_rate, type, notes, completed)
        └── ClientFile (original_filename, mimetype, size, description, stored on disk)
 ```

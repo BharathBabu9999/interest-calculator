@@ -68,7 +68,7 @@ export default function ClientPage() {
         clientsApi.get(clientId),
         transactionsApi.list(clientId),
       ]);
-      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company });
+      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, clientType: clientData.client_type, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company });
       setNotesDraft(clientData.notes ?? "");
       setTransactions(txData.map(apiToLocal));
     } catch (err) {
@@ -268,6 +268,9 @@ export default function ClientPage() {
                 <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 rounded-full px-2 py-0.5">
                   {client.currency}
                 </span>
+                <span className={`text-xs rounded-full px-2 py-0.5 font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300`}>
+                  {client.clientType === "financial_institution" ? "Financial Institution" : "Individual"}
+                </span>
               </>
             )}
           </div>
@@ -423,7 +426,7 @@ export default function ClientPage() {
 
         {/* Static content sections */}
         {/* Contact Info */}
-        {(client?.phone || client?.email || client?.address || client?.company) && (
+        {(client?.phone || client?.email || client?.address || client?.company || client?.clientType) && (
           <div className="mt-8 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-slate-700">
               <svg className="w-4 h-4 text-gray-400 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -432,6 +435,14 @@ export default function ClientPage() {
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Contact Info</h3>
             </div>
             <dl className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              {client?.clientType && (
+                <div>
+                  <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Type</dt>
+                  <dd className="text-sm text-gray-800 dark:text-slate-200">
+                    {client.clientType === "financial_institution" ? "Financial Institution" : "Individual"}
+                  </dd>
+                </div>
+              )}
               {client?.company && (
                 <div>
                   <dt className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide mb-0.5">Company</dt>

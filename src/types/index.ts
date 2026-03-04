@@ -8,10 +8,13 @@ export interface Transaction {
   completed: boolean;
 }
 
+export type ClientType = 'individual' | 'financial_institution';
+
 export interface Client {
   name: string;
   id: string;
   currency: string;
+  clientType: ClientType;
   notes?: string | null;
   phone?: string | null;
   email?: string | null;

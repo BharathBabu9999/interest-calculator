@@ -3,6 +3,8 @@ from datetime import date as Date, datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, field_validator
 
+ClientType = Literal["individual", "financial_institution"]
+
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,7 @@ class Token(BaseModel):
 
 class ClientCreate(BaseModel):
     name: str
+    client_type: ClientType = "individual"
     currency: str = "USD"
     notes: Optional[str] = None
     phone: Optional[str] = None
@@ -39,6 +42,7 @@ class ClientCreate(BaseModel):
 
 class ClientUpdate(BaseModel):
     name: Optional[str] = None
+    client_type: Optional[ClientType] = None
     currency: Optional[str] = None
     notes: Optional[str] = None
     phone: Optional[str] = None
@@ -50,6 +54,7 @@ class ClientUpdate(BaseModel):
 class ClientRead(BaseModel):
     id: uuid.UUID
     name: str
+    client_type: ClientType
     currency: str
     notes: Optional[str]
     phone: Optional[str]

@@ -1,8 +1,10 @@
 import { api } from "./client";
+import type { ClientType } from "../types";
 
 export interface ClientRead {
   id: string;
   name: string;
+  client_type: ClientType;
   currency: string;
   notes: string | null;
   phone: string | null;
@@ -14,6 +16,7 @@ export interface ClientRead {
 
 export interface ClientCreate {
   name: string;
+  client_type?: ClientType;
   currency: string;
   notes?: string;
   phone?: string;
@@ -24,6 +27,7 @@ export interface ClientCreate {
 
 export interface ClientUpdate {
   name?: string;
+  client_type?: ClientType;
   currency?: string;
   notes?: string;
   phone?: string;
