@@ -31,6 +31,9 @@ function apiToLocal(tx: TransactionRead): Transaction {
     type: tx.type,
     notes: tx.notes ?? "",
     completed: tx.completed ?? false,
+    expectedRepaymentDate: tx.expected_repayment_date
+      ? new Date(`${tx.expected_repayment_date}T00:00:00`)
+      : null,
   };
 }
 
@@ -109,6 +112,9 @@ export default function ClientPage() {
         interest_rate: transaction.interestRate,
         type: transaction.type,
         notes: transaction.notes || undefined,
+        expected_repayment_date: transaction.expectedRepaymentDate
+          ? formatDateForInput(transaction.expectedRepaymentDate)
+          : undefined,
       });
       setTransactions((prev) => [...prev, apiToLocal(created)]);
     } catch (err) {
@@ -134,6 +140,9 @@ export default function ClientPage() {
         type: updated.type,
         notes: updated.notes || undefined,
         completed: updated.completed,
+        expected_repayment_date: updated.expectedRepaymentDate
+          ? formatDateForInput(updated.expectedRepaymentDate)
+          : null,
       });
       setTransactions((prev) =>
         prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))

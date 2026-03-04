@@ -54,6 +54,7 @@ class Transaction(Base):
     type: Mapped[str] = mapped_column(Enum("lend", "borrow", name="transaction_type"), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     completed: Mapped[bool] = mapped_column(nullable=False, server_default="false")
+    expected_repayment_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     client: Mapped["Client"] = relationship("Client", back_populates="transactions")

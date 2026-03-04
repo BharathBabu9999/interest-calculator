@@ -88,6 +88,9 @@ export default function TransactionTable({
                 Notes
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                Repayment Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 Current Value
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
@@ -160,6 +163,19 @@ export default function TransactionTable({
                         className="w-full px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded"
                       />
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <input
+                        type="date"
+                        value={editForm.expectedRepaymentDate ? formatDateForInput(editForm.expectedRepaymentDate) : ''}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            expectedRepaymentDate: e.target.value ? new Date(e.target.value + 'T00:00:00') : null,
+                          })
+                        }
+                        className="w-full px-2 py-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                       {formatCurrency(breakdown.currentValue, currency)}
                     </td>
@@ -218,6 +234,11 @@ export default function TransactionTable({
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">
                       {transaction.notes || '-'}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
+                      {transaction.expectedRepaymentDate
+                        ? formatDateForDisplay(transaction.expectedRepaymentDate)
+                        : <span className="text-gray-300 dark:text-slate-600">—</span>}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
                       {isCompleted ? (
                         <span className="line-through text-gray-400 dark:text-slate-500">
@@ -263,7 +284,7 @@ export default function TransactionTable({
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-4 bg-gray-50 dark:bg-slate-700/30">
+                      <td colSpan={9} className="px-6 py-4 bg-gray-50 dark:bg-slate-700/30">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-gray-900 dark:text-white">Calculation Breakdown</h4>
                           

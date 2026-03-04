@@ -21,6 +21,9 @@ function apiToLocal(tx: TransactionRead): Transaction {
     type: tx.type,
     notes: tx.notes ?? "",
     completed: tx.completed ?? false,
+    expectedRepaymentDate: tx.expected_repayment_date
+      ? new Date(`${tx.expected_repayment_date}T00:00:00`)
+      : null,
   };
 }
 

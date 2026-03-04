@@ -24,12 +24,27 @@ const dateStringSchema = z.string().refine((val) => {
   return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
 }, 'Invalid date. Use DD/MM/YYYY format');
 
+const optionalDateStringSchema = z.string().refine((val) => {
+  if (!val) return true; // empty is OK
+  const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+  const match = val.match(regex);
+  if (!match) return false;
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const year = parseInt(match[3], 10);
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+  const date = new Date(year, month - 1, day);
+  return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+}, 'Invalid date. Use DD/MM/YYYY format');
+
 const transactionSchema = z.object({
   date: dateStringSchema,
   amount: z.number().positive('Amount must be positive'),
   interestRate: z.number().min(0, 'Interest rate must be non-negative'),
   type: z.enum(['lend', 'borrow']),
   notes: z.string(),
+  expectedRepaymentDate: optionalDateStringSchema,
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -54,6 +69,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       interestRate: 2,
       type: 'lend',
       notes: '',
+      expectedRepaymentDate: '',
     },
   });
 
@@ -61,6 +77,12 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
     // Parse DD/MM/YYYY to Date object
     const [day, month, year] = data.date.split('/').map(Number);
     const parsedDate = new Date(year, month - 1, day);
+
+    let expectedRepaymentDate: Date | null = null;
+    if (data.expectedRepaymentDate) {
+      const [rd, rm, ry] = data.expectedRepaymentDate.split('/').map(Number);
+      expectedRepaymentDate = new Date(ry, rm - 1, rd);
+    }
     
     const transaction: Transaction = {
       id: crypto.randomUUID(),
@@ -70,10 +92,11 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       type: data.type,
       notes: data.notes,
       completed: false,
+      expectedRepaymentDate,
     };
 
     onAddTransaction(transaction);
-    reset({ ...data, date: formatDateForDisplay(new Date()) });
+    reset({ ...data, date: formatDateForDisplay(new Date()), expectedRepaymentDate: '' });
   };
 
   return (
@@ -97,7 +120,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       {isOpen && (
         <div className="px-6 pb-6 pt-2 border-t dark:border-slate-700">
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date (DD/MM/YYYY)</label>
             <input
@@ -161,6 +184,22 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
               {...register('notes')}
               className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              Expected Repayment <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="DD/MM/YYYY"
+              {...register('expectedRepaymentDate')}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              maxLength={10}
+            />
+            {errors.expectedRepaymentDate && (
+              <p className="text-red-500 text-xs mt-1">{errors.expectedRepaymentDate.message}</p>
+            )}
           </div>
         </div>
 

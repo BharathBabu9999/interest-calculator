@@ -75,6 +75,7 @@ class TransactionCreate(BaseModel):
     type: Literal["lend", "borrow"]
     notes: Optional[str] = None
     completed: bool = False
+    expected_repayment_date: Optional[Date] = None
 
     @field_validator("amount")
     @classmethod
@@ -98,6 +99,7 @@ class TransactionUpdate(BaseModel):
     type: Optional[Literal["lend", "borrow"]] = None
     notes: Optional[str] = None
     completed: Optional[bool] = None
+    expected_repayment_date: Optional[Date] = None
 
 
 class TransactionRead(BaseModel):
@@ -109,6 +111,7 @@ class TransactionRead(BaseModel):
     type: str
     notes: Optional[str]
     completed: bool
+    expected_repayment_date: Optional[Date] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
