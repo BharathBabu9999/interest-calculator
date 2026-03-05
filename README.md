@@ -6,6 +6,8 @@ A full-stack React + FastAPI application for managing private financing — trac
 
 ### Authentication
 - **User accounts** — register and log in with email + password
+- **Google Sign-In** — one-click OAuth login/registration on both the sign-in and sign-up pages
+- **Forgot password** — request a reset link by email; link expires in 1 hour; works on both localhost (link printed to server terminal) and production (sent via Gmail SMTP)
 - **JWT-based sessions** — stay logged in for 7 days (token stored in localStorage)
 - **Private data** — each user's clients and transactions are completely isolated
 
@@ -16,7 +18,7 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Contact details** — store phone, email, address, and company per client
 - **Editable notes** — attach and edit free-text notes on each client page
 - **File attachments** — upload documents (images, PDF, Word, Excel, PowerPoint, CSV) per client with thumbnail previews, upload date/time, and per-file descriptions; images larger than 3 MB are automatically compressed client-side before upload
-- **Full CRUD** — create, edit, and delete clients from the dashboard
+- **Full CRUD** — create, edit, and delete clients from the dashboard (delete requires confirmation in a warning modal)
 
 ### Transaction Tracking (per client)
 - **Dual transaction types** — **Lend** (money given out) and **Borrow** (money received)
@@ -69,7 +71,9 @@ A full-stack React + FastAPI application for managing private financing — trac
 | PDF / CSV | jsPDF, PapaParse |
 | Backend | Python 3.14, FastAPI |
 | Database | PostgreSQL 16 (via SQLAlchemy async) |
-| Auth | JWT (python-jose) + bcrypt |
+| Auth | JWT (python-jose) + bcrypt + Google OAuth 2.0 |
+| Email | aiosmtplib + Gmail SMTP (App Password) |
+| Google OAuth | google-auth (BE), @react-oauth/google (FE) |
 
 ## 🚀 Local Development Setup
 
@@ -114,9 +118,28 @@ DATABASE_URL=postgresql+asyncpg://your_mac_username@localhost:5432/interest_calc
 
 # Generate a secret key with: openssl rand -hex 32
 SECRET_KEY=paste-your-generated-key-here
+
+# Frontend origin (used in password-reset email links)
+FRONTEND_URL=http://localhost:5173
+
+# Google OAuth — create a project at https://console.cloud.google.com/
+# and add http://localhost:5173 as an authorised JavaScript origin
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+
+# Gmail SMTP — use a 16-char App Password from myaccount.google.com/apppasswords
+# Leave blank to fall back to printing the reset link in the server terminal
+GMAIL_USER=your-gmail@gmail.com
+GMAIL_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
 ```
 
 > On macOS with a Homebrew Postgres install there is usually no password — omit `:password` from the URL.
+
+Create `.env.local` in the **project root** for frontend secrets:
+
+```env
+VITE_API_URL=http://localhost:8000
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```
 
 ### 4 — Set up the Python environment
 
@@ -154,7 +177,7 @@ The app runs at **http://localhost:5173**.
 
 ### 7 — Try it out
 
-1. Open `http://localhost:5173` → click **"Create one"** to register
+1. Open `http://localhost:5173` → click **"Create one"** to register (or use **Continue with Google**)
 2. On the dashboard, click **"+ Add Client"** — enter a name, **client type** (Individual or Financial Institution), currency, and optional contact details
 3. Click the client card → you're in the transaction view
 4. Add **Lend** or **Borrow** transactions; set an optional **Expected Repayment Date** in DD/MM/YYYY format; interest is calculated live
@@ -163,6 +186,7 @@ The app runs at **http://localhost:5173**.
 7. Click **"Portfolio Summary"** in the nav to see totals across all clients
 8. On the client page, add notes or upload files (images, PDFs, documents) using the Files card
 9. Use the **sun/moon icon** in the top-right to toggle dark / light mode
+10. To test the forgot-password flow: click **"Forgot password?"** on the login page → enter your email → the reset link is sent by email (or printed to the uvicorn terminal if Gmail SMTP is not configured)
 
 ---
 
@@ -177,10 +201,11 @@ interest-calc/
 │   ├── schemas.py                  # Pydantic request/response schemas
 │   ├── auth.py                     # JWT creation, bcrypt, get_current_user
 │   ├── routers/
-│   │   ├── auth.py                 # POST /auth/register, /auth/login, GET /auth/me
+│   │   ├── auth.py                 # register, login, me, forgot-password, reset-password, google
 │   │   ├── clients.py              # GET/POST /clients, PUT/DELETE /clients/:id
 │   │   ├── transactions.py         # GET/POST /clients/:id/transactions, PUT/DELETE /transactions/:id
 │   │   └── files.py                # GET/POST /clients/:id/files, GET/PATCH/DELETE /files/:id
+│   ├── email_utils.py              # Gmail SMTP sender (aiosmtplib); falls back to console in dev
 │   ├── uploads/                    # Uploaded files stored here (git-ignored)
 │   ├── requirements.txt
 │   ├── .env                        # Secret config (git-ignored)
@@ -189,17 +214,19 @@ interest-calc/
 └── src/                            # React frontend
     ├── api/
     │   ├── client.ts               # Base fetch wrapper (injects Bearer token)
-    │   ├── auth.ts                 # login(), register()
+    │   ├── auth.ts                 # login(), register(), forgotPassword(), resetPassword(), loginWithGoogle()
     │   ├── clients.ts              # Client CRUD
     │   ├── transactions.ts         # Transaction CRUD
     │   └── files.ts                # File upload/download/delete/description
     ├── contexts/
-    │   ├── AuthContext.tsx         # useAuth() hook, PrivateRoute
+    │   ├── AuthContext.tsx         # useAuth() hook, loginWithGoogle(), PrivateRoute
     │   └── ThemeContext.tsx        # useTheme() hook, ThemeProvider, localStorage persistence
     ├── pages/
-    │   ├── LoginPage.tsx
-    │   ├── RegisterPage.tsx
-    │   ├── DashboardPage.tsx       # Client list
+    │   ├── LoginPage.tsx           # Email/password + Google Sign-In + forgot password link
+    │   ├── RegisterPage.tsx        # Email/password + Google Sign-In
+    │   ├── ForgotPasswordPage.tsx  # Email form → triggers reset email
+    │   ├── ResetPasswordPage.tsx   # New-password form (reads ?token= from URL)
+    │   ├── DashboardPage.tsx       # Client list with delete-confirmation modal
     │   ├── ClientPage.tsx          # Transactions view for a single client
     │   └── SummaryPage.tsx         # Portfolio summary across all clients
     ├── components/
@@ -226,8 +253,10 @@ interest-calc/
 
 | URL | Page | Auth required |
 |---|---|---|
-| `/login` | Sign in | No |
-| `/register` | Create account | No |
+| `/login` | Sign in (email/password or Google) | No |
+| `/register` | Create account (email/password or Google) | No |
+| `/forgot-password` | Request a password reset email | No |
+| `/reset-password?token=…` | Set a new password via emailed link | No |
 | `/guest` | Guest mode — full calculator with localStorage persistence | No |
 | `/` | Dashboard — client list | Yes |
 | `/clients/:id` | Transactions for a client | Yes |
@@ -238,10 +267,12 @@ interest-calc/
 ## 🗄️ Data Model
 
 ```
-User
+User (email, hashed_password, google_id)
  └── Client (name, client_type, currency, phone, email, address, company, notes)
        ├── Transaction (date, amount, interest_rate, type, notes, completed, expected_repayment_date)
        └── ClientFile (original_filename, mimetype, size, description, stored on disk)
+
+PasswordResetToken (user_id, token, expires_at, used)
 ```
 
 All data is user-scoped — a user can only see and modify their own clients and transactions.
@@ -288,6 +319,9 @@ Date,Amount,Interest Rate,Type,Notes,Expected Repayment Date
 | `database does not exist` | Run `psql postgres -c "CREATE DATABASE interest_calc;"` |
 | Frontend shows "Failed to fetch" | Make sure the backend terminal is still running |
 | Port 8000 already in use | `kill $(lsof -ti:8000)` then restart |
+| Google Sign-In — "Missing client_id" | Ensure `VITE_GOOGLE_CLIENT_ID` is set in `.env.local` (dev) or Vercel env vars (prod) |
+| Google Sign-In — "not configured" (500) | Ensure `GOOGLE_CLIENT_ID` is set in `backend/.env` |
+| Password reset email not received | If `GMAIL_USER`/`GMAIL_APP_PASSWORD` are absent, the reset link is printed to the uvicorn terminal |
 
 ---
 

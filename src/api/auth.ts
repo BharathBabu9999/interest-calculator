@@ -20,4 +20,13 @@ export const authApi = {
     api.post<TokenResponse>("/auth/login", { email, password }),
 
   me: () => api.get<UserRead>("/auth/me"),
+
+  forgotPassword: (email: string) =>
+    api.post<{ message: string }>("/auth/forgot-password", { email }),
+
+  resetPassword: (token: string, new_password: string) =>
+    api.post<{ message: string }>("/auth/reset-password", { token, new_password }),
+
+  loginWithGoogle: (id_token: string) =>
+    api.post<TokenResponse>("/auth/google", { id_token }),
 };

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -20,9 +21,20 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    setGoogleError(null);
+    try {
+      await loginWithGoogle(credentialResponse.credential!);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setGoogleError(err instanceof Error ? err.message : "Google Sign-In failed");
+    }
+  };
 
   const {
     register,
@@ -128,6 +140,27 @@ export default function RegisterPage() {
               Sign in
             </Link>
           </p>
+
+          <div className="relative flex items-center my-5">
+            <div className="grow border-t border-gray-200 dark:border-slate-700" />
+            <span className="px-3 text-xs text-gray-400 dark:text-slate-500">or continue with</span>
+            <div className="grow border-t border-gray-200 dark:border-slate-700" />
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setGoogleError("Google Sign-In failed")}
+              theme="outline"
+              size="large"
+              width="368"
+              text="signup_with"
+              shape="rectangular"
+            />
+          </div>
+          {googleError && (
+            <p className="text-red-500 dark:text-red-400 text-xs text-center mt-2">{googleError}</p>
+          )}
         </div>
 
         <div className="relative flex items-center my-5">

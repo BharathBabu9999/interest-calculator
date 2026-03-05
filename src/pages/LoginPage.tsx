@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -14,9 +15,20 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    setGoogleError(null);
+    try {
+      await loginWithGoogle(credentialResponse.credential!);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setGoogleError(err instanceof Error ? err.message : "Google Sign-In failed");
+    }
+  };
 
   const {
     register,
@@ -69,9 +81,17 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 autoComplete="current-password"
@@ -105,7 +125,27 @@ export default function LoginPage() {
               Create one
             </Link>
           </p>
-        </div>
+
+          <div className="relative flex items-center my-5">
+            <div className="grow border-t border-gray-200 dark:border-slate-700" />
+            <span className="px-3 text-xs text-gray-400 dark:text-slate-500">or continue with</span>
+            <div className="grow border-t border-gray-200 dark:border-slate-700" />
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setGoogleError("Google Sign-In failed")}
+              theme="outline"
+              size="large"
+              width="368"
+              text="signin_with"
+              shape="rectangular"
+            />
+          </div>
+          {googleError && (
+            <p className="text-red-500 dark:text-red-400 text-xs text-center mt-2">{googleError}</p>
+          )}        </div>
 
         <div className="relative flex items-center my-5">
           <div className="grow border-t border-gray-300 dark:border-slate-600" />

@@ -14,6 +14,8 @@ dist-ssr
 
 # Env files (contain secrets)
 .env
+.env.local
+.env.production
 backend/.env
 
 # Python virtual env

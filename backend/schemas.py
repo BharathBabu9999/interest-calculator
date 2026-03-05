@@ -13,6 +13,19 @@ class UserCreate(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+
+
 class UserRead(BaseModel):
     id: uuid.UUID
     email: str
