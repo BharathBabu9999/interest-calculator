@@ -3,8 +3,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -122,6 +120,11 @@ async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depen
 
 @router.post("/google", response_model=Token)
 async def google_auth(payload: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    # Lazy imports — top-level import of google.auth.transport.requests triggers
+    # a GCE metadata probe that hangs for ~10 min on non-GCP hosts (e.g. Render)
+    from google.oauth2 import id_token as google_id_token
+    from google.auth.transport import requests as google_requests
+
     google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     if not google_client_id:
         raise HTTPException(status_code=503, detail="Google Sign-In is not configured")
