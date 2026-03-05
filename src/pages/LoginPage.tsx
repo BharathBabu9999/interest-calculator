@@ -6,6 +6,7 @@ import { z } from "zod";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../contexts/AuthContext";
 import ThemeToggle from "../components/ThemeToggle";
+import { useWakeUpServer } from "../hooks/useWakeUpServer";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const isWarmingUp = useWakeUpServer();
 
   const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     setGoogleError(null);
@@ -54,6 +56,15 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md">
+        {isWarmingUp && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            <svg className="h-4 w-4 shrink-0 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83" />
+            </svg>
+            <span>Server is waking up — this may take up to 30 seconds on first load.</span>
+          </div>
+        )}
+
         {/* Logo / title */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Interest Calculator</h1>

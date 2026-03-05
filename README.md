@@ -322,6 +322,7 @@ Date,Amount,Interest Rate,Type,Notes,Expected Repayment Date
 | Google Sign-In — "Missing client_id" | Ensure `VITE_GOOGLE_CLIENT_ID` is set in `.env.local` (dev) or Vercel env vars (prod) |
 | Google Sign-In — "not configured" (500) | Ensure `GOOGLE_CLIENT_ID` is set in `backend/.env` |
 | Password reset email not received | If `GMAIL_USER`/`GMAIL_APP_PASSWORD` are absent, the reset link is printed to the uvicorn terminal |
+| Login/register hangs on production (first visit) | Render free tier spins down after ~15 min of inactivity; the login and register pages automatically ping `/health` on mount — an amber banner is shown if the server takes more than 1.5 s to respond. First response may take up to 30 s. To keep the server always warm, set up a free [UptimeRobot](https://uptimerobot.com) monitor hitting `https://<your-render-url>/health` every 14 minutes. |
 
 ---
 
