@@ -20,9 +20,9 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <HowToUseSection defaultOpen />
-        <IntroSection defaultOpen />
-        <FAQSection defaultOpen />
+        <HowToUseSection />
+        <IntroSection />
+        <FAQSection />
         <PrivacyPolicy />
       </div>
 

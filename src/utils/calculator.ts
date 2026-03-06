@@ -100,9 +100,13 @@ export function calculateTotalBalance(
   totalLent: number;
   totalBorrowed: number;
   netBalance: number;
+  principalLent: number;
+  principalBorrowed: number;
 } {
   let totalLent = 0;
   let totalBorrowed = 0;
+  let principalLent = 0;
+  let principalBorrowed = 0;
 
   transactions.forEach((transaction) => {
     if (transaction.completed) return; // skip completed transactions
@@ -110,8 +114,10 @@ export function calculateTotalBalance(
     
     if (transaction.type === 'lend') {
       totalLent += breakdown.currentValue;
+      principalLent += transaction.amount;
     } else {
       totalBorrowed += breakdown.currentValue;
+      principalBorrowed += transaction.amount;
     }
   });
 
@@ -119,5 +125,26 @@ export function calculateTotalBalance(
     totalLent,
     totalBorrowed,
     netBalance: totalLent - totalBorrowed,
+    principalLent,
+    principalBorrowed,
+  };
+}
+
+/**
+ * Approximate daily interest accrual as of a given date.
+ * Computed as (balance at +30 days − balance now) ÷ 30 across all active transactions.
+ */
+export function calculateDailyInterest(
+  transactions: Transaction[],
+  asOfDate: Date
+): { lent: number; borrowed: number; net: number } {
+  const asOfDate30 = new Date(asOfDate);
+  asOfDate30.setDate(asOfDate30.getDate() + 30);
+  const now = calculateTotalBalance(transactions, asOfDate);
+  const future = calculateTotalBalance(transactions, asOfDate30);
+  return {
+    lent: (future.totalLent - now.totalLent) / 30,
+    borrowed: (future.totalBorrowed - now.totalBorrowed) / 30,
+    net: (future.netBalance - now.netBalance) / 30,
   };
 }

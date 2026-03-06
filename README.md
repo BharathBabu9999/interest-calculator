@@ -21,53 +21,57 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Full CRUD** — create, edit, and delete clients from the dashboard (delete requires confirmation in a warning modal)
 
 ### Transaction Tracking (per client)
-### Transaction Tracking (per client)
-- **Add Transaction overlay** — when adding a transaction, an overlay appears with a spinner and message until the operation completes (success or error)
+- **Add Transaction overlay** — when adding a transaction, an overlay appears with a spinner and message until the operation completes
 - **Form loading state** — the Add Transaction form and button are disabled while the transaction is being added
-- **Net Outstanding Balance color** — on the client page, the net outstanding balance is shown in green if positive/zero, red if negative
-- **Improved sort arrows** — all sortable tables now use consistent up/down SVG arrows with blue for active and gray for inactive, matching the summary page style
+- **Net Outstanding Balance color** — shown in green if positive/zero, red if negative
+- **Improved sort arrows** — sortable columns use consistent up/down SVG arrows (blue = active, gray = inactive)
+- **Compact violet calculation breakdown** — click any transaction row to expand a clean side-by-side breakdown: duration badge, Annual Compounding steps (each year's formula and result), Months interest, Days interest, and Current Value with interest highlighted in violet
+- **Show Detail Calculations toggle** — a violet toggle button in the As-of-Date bar opens the breakdown panel for all active transactions at once without needing to click individual rows
+- **Daily Value toggle** — a blue toggle button shows an Approximate Daily Interest card above the summary, displaying lent/borrowed/net daily accrual computed as `(balance at +30 days − current balance) ÷ 30` with 2-decimal precision
 
 ### Portfolio Summary
 - **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view
 - **As-of-date filter** — recalculate all balances as of any date
 - **Filters** — filter by client type (Individual / Financial Institution) and net balance (greater/less than an amount)
-- **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, or net balance
-- **Per-currency grouping** — grand totals grouped by currency (respects active filters)
+- **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, net balance, or highest rate
+- **Highest Rate column** — shows the maximum interest rate across all transactions for each client
+- **Per-currency grouping** — grand totals grouped by currency; broken down by client type when both types are present
+- **Daily Value toggle** — same blue daily interest card available on the Summary page, aggregated across all included clients per currency
 - **Click-through** — click any client row to jump straight to their transaction page
-- **Add Client shortcut** — "+ Add Client" button on the Summary page navigates to the Dashboard and automatically opens the Add Client modal
-- **Show Transactions toggle** — toggle on to expand each client row and reveal a per-transaction mini-table (Date, Type, Amount, Rate, Balance, Reminder Date, Notes); click a row to expand/collapse individually
-- **Show Detail Calculations** — appears when Show Transactions is on; per-transaction breakdown showing duration, annual compounding steps, months interest, days interest, and current value
-- **Reminder Date column** — renamed from "Repayment Date"; shown in the expanded transaction rows and in the full client transaction table
+- **Add Client shortcut** — "+ Add Client" button navigates to the Dashboard and automatically opens the Add Client modal
+- **Show Transactions toggle** — expand each client row to reveal a per-transaction mini-table (Date, Type, Amount, Rate, Balance, Reminder Date, Notes)
+- **Show Detail Calculations** — appears when Show Transactions is on; per-transaction compact violet breakdown
+- **Reminder Date column** — shown in expanded transaction rows and in the full client transaction table
 
 ### Guest Mode
-- **Try without registering** — visit `/guest` to use the full calculator with localStorage-only persistence (no account needed)
-- **Amber banner** — persistent reminder with links to sign in or create an account
-- **No data loss on navigation** — guest client and transactions are saved to `localStorage` automatically
+- **Try without registering** — visit `/guest` for the full calculator with localStorage-only persistence
+- **Mirrors the Client page** — same layout as an authenticated client page: As-of-Date bar, Show Detail Calculations toggle, Daily Value toggle, Summary cards, Transaction form, controls bar, and transaction table
+- **Guest-only extras** — amber "Guest mode" banner with Sign in / Create account links; editable Client Info card (name, ID, currency); **Load Example** and **Clear All** buttons; How to Use / FAQ / Privacy Policy sections at the bottom
+- **No data loss on navigation** — client info and transactions are saved to `localStorage` automatically
 
 ### Navigation
-- **Shared navbar** — a single consistent top navigation bar appears on every authenticated page (Dashboard, Client, Portfolio Summary, About); shows active tab with a blue underline indicator
-- **Tabs** — **Clients** (Dashboard), **Portfolio Summary**, and **About** tabs in the navbar; breadcrumb slot on the Client page shows client name, currency, and type badges
+- **Shared navbar** — consistent top navigation bar on every authenticated page; shows active tab with a blue underline indicator
+- **Tabs** — **Clients** (Dashboard), **Portfolio Summary**, and **About** in the navbar; breadcrumb slot on the Client page shows client name, currency, and type badges
 
 ### About Page
 - **Dedicated documentation hub** at `/about` — How to Use, Introduction, FAQ, and Privacy Policy sections, all expanded by default
-- Accessible from the **About** tab in the navbar on every page
 
 ### UI & Theme
 - **Dark / light mode** — toggle at the top of every page; preference saved to localStorage
-- **Rich toast notifications** — after adding a transaction a card notification appears with a coloured top strip, icon, and a detail grid showing Type, Amount, Date, Rate, and Notes
-- **Skeleton loading** — the Dashboard shows animated placeholder cards while client data loads
-- **Improved empty state** — when no clients exist, the Dashboard shows a centred icon, heading, and a direct "+ Add Client" call-to-action button
+- **Rich toast notifications** — card notification with coloured top strip, icon, and detail grid showing Type, Amount, Date, Rate, and Notes
+- **Skeleton loading** — animated placeholder cards while data loads
+- **Improved empty state** — centred icon, heading, and direct "+ Add Client" call-to-action when no clients exist
 
 ### Interest Calculation Engine
-- **Anniversary-based annual compounding** — interest compounds on each 12-month anniversary of the transaction, not at calendar year-end
+- **Anniversary-based annual compounding** — interest compounds on each 12-month anniversary of the transaction
 - **Three-part calculation per transaction**:
   - *Years interest* — compounded on each anniversary
   - *Months interest* — simple interest for full months after the last anniversary
   - *Days interest* — daily interest for remaining days based on exact days in the month
-- **Expandable breakdown** — click any row to see step-by-step compounding details
+- **`calculateDailyInterest` utility** — shared function in `calculator.ts`; takes transactions + a date, computes lent/borrowed/net daily accrual using the +30 day method; used by both the Summary component and the Portfolio Summary page
 
 ### Data Management
-- **PostgreSQL database** — persistent storage, survives page refreshes and server restarts
+- **PostgreSQL database** — persistent storage via SQLAlchemy async
 - **FastAPI backend** — REST API with automatic OpenAPI docs at `/docs`
 - **PDF export** — professional report with transaction details and breakdowns
 - **CSV export/import** — supports DD/MM/YYYY and ISO date formats
@@ -192,16 +196,19 @@ The app runs at **http://localhost:5173**.
 ### 7 — Try it out
 
 1. Open `http://localhost:5173` → click **"Create one"** to register (or use **Continue with Google**)
-2. On the dashboard, click **"+ Add Client"** — enter a name, **client type** (Individual or Financial Institution), currency, and optional contact details
-3. Click the client card → you're in the transaction view
-4. Add **Lend** or **Borrow** transactions; set an optional **Reminder Date** in DD/MM/YYYY format; interest is calculated live
-5. Click any row to expand the step-by-step compounding breakdown
-6. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
-7. Click **"Portfolio Summary"** in the nav to see totals across all clients; use **"+ Add Client"** there to go straight to the Add Client modal
-8. Click **"About"** in the nav to open the documentation hub (How to Use, FAQ, Privacy Policy — all expanded)
-9. On the client page, add notes or upload files (images, PDFs, documents) using the Files card
-10. Use the **sun/moon icon** in the top-right to toggle dark / light mode
-11. To test the forgot-password flow: click **"Forgot password?"** on the login page → enter your email → the reset link is sent by email (or printed to the uvicorn terminal if Gmail SMTP is not configured)
+2. Or visit `/guest` to try it without registering — full calculator with localStorage persistence
+3. On the dashboard, click **"+ Add Client"** — enter a name, **client type**, currency, and optional contact details
+4. Click the client card → you're in the transaction view
+5. Add **Lend** or **Borrow** transactions; set an optional **Reminder Date**; interest is calculated live
+6. Click **"Show Detail Calculations"** (violet button, As-of-Date bar) to expand the compact breakdown for all active rows at once — or click an individual row to see its breakdown
+7. Click **"Daily Value"** (blue button) to see approximate lent/borrowed/net interest accrual per day, computed as `(balance at +30 days − current balance) ÷ 30`
+8. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
+9. Click **"Portfolio Summary"** in the nav to see totals across all clients, grouped by currency and client type; toggle **Daily Value** there too for an aggregate daily picture
+10. On the Summary page, use **"Highest Rate"** column to spot the maximum rate per client
+11. Click **"About"** in the nav to open the documentation hub (How to Use, FAQ, Privacy Policy)
+12. On the client page, add notes or upload files using the Files card
+13. Use the **sun/moon icon** to toggle dark / light mode
+14. To test the forgot-password flow: click **"Forgot password?"** on the login page → enter your email → the reset link is sent by email (or printed to the uvicorn terminal if Gmail SMTP is not configured)
 
 ---
 
@@ -220,7 +227,6 @@ interest-calc/
 │   │   ├── clients.py              # GET/POST /clients, PUT/DELETE /clients/:id
 │   │   ├── transactions.py         # GET/POST /clients/:id/transactions, PUT/DELETE /transactions/:id
 │   │   └── files.py                # GET/POST /clients/:id/files, GET/PATCH/DELETE /files/:id
-│   ├── email_utils.py              # Gmail SMTP sender (aiosmtplib); falls back to console in dev
 │   ├── uploads/                    # Uploaded files stored here (git-ignored)
 │   ├── requirements.txt
 │   ├── .env                        # Secret config (git-ignored)
@@ -231,7 +237,7 @@ interest-calc/
     │   ├── client.ts               # Base fetch wrapper (injects Bearer token)
     │   ├── auth.ts                 # login(), register(), forgotPassword(), resetPassword(), loginWithGoogle()
     │   ├── clients.ts              # Client CRUD
-    │   ├── transactions.ts         # Transaction CRUD
+    │   ├── transactions.ts         # Transaction CRUD + apiTransactionToLocal() shared helper
     │   └── files.ts                # File upload/download/delete/description
     ├── contexts/
     │   ├── AuthContext.tsx         # useAuth() hook, loginWithGoogle(), PrivateRoute
@@ -243,24 +249,28 @@ interest-calc/
     │   ├── ResetPasswordPage.tsx   # New-password form (reads ?token= from URL)
     │   ├── DashboardPage.tsx       # Client list, skeleton loading, empty-state CTA, delete modal
     │   ├── ClientPage.tsx          # Transactions view for a single client + docs sections
+    │   ├── GuestPage.tsx           # Guest mode — mirrors ClientPage with localStorage persistence
     │   ├── SummaryPage.tsx         # Portfolio summary across all clients + Add Client button
-    │   └── AboutPage.tsx           # Documentation hub (How to Use, FAQ, Privacy Policy — open)
+    │   └── AboutPage.tsx           # Documentation hub (How to Use, FAQ, Privacy Policy)
     ├── components/
     │   ├── Navbar.tsx              # Shared top nav (Clients / Portfolio Summary / About tabs)
     │   ├── Toast.tsx               # Rich card notification with coloured strip + detail grid
+    │   ├── ToggleButton.tsx        # Reusable active/inactive toggle button (blue or violet)
+    │   ├── DailyInterestCard.tsx   # Shared daily interest breakdown card (lent/borrowed/net per day)
+    │   ├── Summary.tsx             # Per-client summary cards + optional DailyInterestCard
     │   ├── TransactionForm.tsx
-    │   ├── TransactionTable.tsx
-    │   ├── Summary.tsx
+    │   ├── TransactionTable.tsx    # Transaction rows with compact violet breakdown panel
     │   ├── ClientFiles.tsx         # File cards with thumbnails, drag-and-drop upload
     │   ├── ThemeToggle.tsx         # Sun/moon icon button
     │   ├── Accordion.tsx           # Collapsible section (supports defaultOpen prop)
-    │   ├── ContentSections.tsx     # HowToUseSection, IntroSection, FAQSection (defaultOpen prop)
+    │   ├── ContentSections.tsx     # HowToUseSection, IntroSection, FAQSection, Footer
     │   └── PrivacyPolicy.tsx
     ├── utils/
-    │   ├── calculator.ts           # Interest calculation engine
-    │   ├── currency.ts
+    │   ├── calculator.ts           # Interest engine: calculateCurrentValue, calculateTotalBalance,
+    │   │                           #   calculateDailyInterest (shared +30d daily accrual utility)
+    │   ├── currency.ts             # formatCurrency (always 2 decimal places)
     │   ├── dateUtils.ts
-    │   └── export.ts               # PDF + CSV
+    │   └── export.ts               # PDF + CSV (client + summary variants)
     ├── types/index.ts
     └── main.tsx                    # Router + AuthProvider setup
 ```

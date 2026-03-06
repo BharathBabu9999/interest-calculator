@@ -1,30 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { clientsApi, type ClientRead } from "../api/clients";
-import { transactionsApi, type TransactionRead } from "../api/transactions";
-import { calculateTotalBalance, calculateCurrentValue } from "../utils/calculator";
+import { transactionsApi, apiTransactionToLocal } from "../api/transactions";
+import { calculateTotalBalance, calculateCurrentValue, calculateDailyInterest } from '../utils/calculator';
 import { formatCurrency } from "../utils/currency";
 import DateInput from "../components/DateInput";
 import { exportSummaryToPDF, exportSummaryToExcel, type SummaryExportRow } from "../utils/export";
 import Navbar from "../components/Navbar";
+import ToggleButton from "../components/ToggleButton";
+import DailyInterestCard from "../components/DailyInterestCard";
 import type { Transaction } from "../types";
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function apiToLocal(tx: TransactionRead): Transaction {
-  return {
-    id: tx.id,
-    date: new Date(`${tx.date}T00:00:00`),
-    amount: tx.amount,
-    interestRate: tx.interest_rate,
-    type: tx.type,
-    notes: tx.notes ?? "",
-    completed: tx.completed ?? false,
-    reminderDate: tx.reminder_date
-      ? new Date(`${tx.reminder_date}T00:00:00`)
-      : null,
-  };
-}
 
 interface ClientSummary {
   client: ClientRead;
@@ -32,6 +17,9 @@ interface ClientSummary {
   totalBorrowed: number;
   netBalance: number;
   txCount: number;
+  highestRate: number;
+  principalLent: number;
+  principalBorrowed: number;
   transactions: Transaction[];
 }
 
@@ -43,7 +31,7 @@ export default function SummaryPage() {
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [summaries, setSummaries] = useState<ClientSummary[]>([]);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
-  const [sortCol, setSortCol] = useState<"name" | "clientType" | "txCount" | "totalLent" | "totalBorrowed" | "netBalance">("name");
+  const [sortCol, setSortCol] = useState<"name" | "clientType" | "txCount" | "totalLent" | "totalBorrowed" | "netBalance" | "highestRate">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +40,7 @@ export default function SummaryPage() {
   const [netBalanceVal, setNetBalanceVal] = useState("");
   const [showDetailedTx, setShowDetailedTx] = useState(false);
   const [showDetailCalc, setShowDetailCalc] = useState(false);
+  const [showDailyValue, setShowDailyValue] = useState(false);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (id: string) =>
@@ -96,15 +85,21 @@ export default function SummaryPage() {
       );
 
       const result: ClientSummary[] = clients.map((client, i) => {
-        const transactions = txLists[i].map(apiToLocal);
-        const { totalLent, totalBorrowed, netBalance } =
+        const transactions = txLists[i].map(apiTransactionToLocal);
+        const { totalLent, totalBorrowed, netBalance, principalLent, principalBorrowed } =
           calculateTotalBalance(transactions, asOfDate);
+        const highestRate = transactions.length > 0
+          ? Math.max(...transactions.map((t) => t.interestRate))
+          : 0;
         return {
           client,
           totalLent,
           totalBorrowed,
           netBalance,
           txCount: transactions.length,
+          highestRate,
+          principalLent,
+          principalBorrowed,
           transactions,
         };
       });
@@ -131,6 +126,7 @@ export default function SummaryPage() {
     else if (sortCol === "totalLent") cmp = a.totalLent - b.totalLent;
     else if (sortCol === "totalBorrowed") cmp = a.totalBorrowed - b.totalBorrowed;
     else if (sortCol === "netBalance") cmp = a.netBalance - b.netBalance;
+    else if (sortCol === "highestRate") cmp = a.highestRate - b.highestRate;
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -146,20 +142,55 @@ export default function SummaryPage() {
 
   // ── grand totals grouped by currency ────────────────────────────────────────
 
-  const totalsMap = filteredSummaries.reduce<
-    Record<string, { lent: number; borrowed: number; net: number }>
-  >((acc, { client, totalLent, totalBorrowed, netBalance }) => {
+  type CurrencyTotals = { lent: number; borrowed: number; net: number; principalLent: number; principalBorrowed: number };
+
+  const totalsMap = filteredSummaries.reduce<Record<string, CurrencyTotals>>(
+    (acc, { client, totalLent, totalBorrowed, netBalance, principalLent, principalBorrowed }) => {
     if (excluded.has(client.id)) return acc;
     const cur = client.currency;
-    if (!acc[cur]) acc[cur] = { lent: 0, borrowed: 0, net: 0 };
+    if (!acc[cur]) acc[cur] = { lent: 0, borrowed: 0, net: 0, principalLent: 0, principalBorrowed: 0 };
     acc[cur].lent += totalLent;
     acc[cur].borrowed += totalBorrowed;
     acc[cur].net += netBalance;
+    acc[cur].principalLent += principalLent;
+    acc[cur].principalBorrowed += principalBorrowed;
     return acc;
   }, {});
 
+  // per-type breakdown (only meaningful when showing all types)
+  const byTypeMap = filteredSummaries.reduce<Record<string, Record<string, CurrencyTotals>>>(
+    (acc, { client, totalLent, totalBorrowed, netBalance, principalLent, principalBorrowed }) => {
+      if (excluded.has(client.id)) return acc;
+      const cur = client.currency;
+      const typ = client.client_type === "financial_institution" ? "Financial Institution" : "Individual";
+      if (!acc[cur]) acc[cur] = {};
+      if (!acc[cur][typ]) acc[cur][typ] = { lent: 0, borrowed: 0, net: 0, principalLent: 0, principalBorrowed: 0 };
+      acc[cur][typ].lent += totalLent;
+      acc[cur][typ].borrowed += totalBorrowed;
+      acc[cur][typ].net += netBalance;
+      acc[cur][typ].principalLent += principalLent;
+      acc[cur][typ].principalBorrowed += principalBorrowed;
+      return acc;
+    }, {});
+
   const grandTotals = Object.entries(totalsMap).sort(([a], [b]) =>
     a.localeCompare(b)
+  );
+
+  // ── daily totals ─────────────────────────────────────────────────────
+
+  type DailyTotals = { lent: number; borrowed: number; net: number };
+  const dailyTotalsMap = filteredSummaries.reduce<Record<string, DailyTotals>>(
+    (acc, { client, transactions }) => {
+      if (excluded.has(client.id)) return acc;
+      const cur = client.currency;
+      const daily = calculateDailyInterest(transactions, asOfDate);
+      if (!acc[cur]) acc[cur] = { lent: 0, borrowed: 0, net: 0 };
+      acc[cur].lent += daily.lent;
+      acc[cur].borrowed += daily.borrowed;
+      acc[cur].net += daily.net;
+      return acc;
+    }, {}
   );
 
   // ── export helpers ──────────────────────────────────────────────────────────
@@ -282,7 +313,8 @@ export default function SummaryPage() {
             </div>
             {/* Show Transactions + Detail Calculations toggles */}
             <div className="flex gap-2 flex-wrap">
-              <button
+              <ToggleButton
+                active={showDetailedTx}
                 onClick={() => {
                   const next = !showDetailedTx;
                   setShowDetailedTx(next);
@@ -293,80 +325,98 @@ export default function SummaryPage() {
                     setShowDetailCalc(false);
                   }
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
-                  showDetailedTx
-                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                    : "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600"
-                }`}
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
                 {showDetailedTx ? "Hide Transactions" : "Show Transactions"}
-              </button>
+              </ToggleButton>
               {showDetailedTx && (
-                <button
+                <ToggleButton
+                  active={showDetailCalc}
                   onClick={() => setShowDetailCalc((v) => !v)}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
-                    showDetailCalc
-                      ? "bg-violet-600 text-white border-violet-600 hover:bg-violet-700"
-                      : "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600"
-                  }`}
+                  activeColor="violet"
+                  icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
                   {showDetailCalc ? "Hide Calculations" : "Show Detail Calculations"}
-                </button>
+                </ToggleButton>
               )}
+              <ToggleButton
+                active={showDailyValue}
+                onClick={() => setShowDailyValue((v) => !v)}
+                icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+              >
+                {showDailyValue ? "Hide Daily Value" : "Daily Value"}
+              </ToggleButton>
             </div>
+          </div>
+        )}
+
+        {/* Daily value cards */}
+        {!loading && showDailyValue && grandTotals.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {Object.entries(dailyTotalsMap).sort(([a], [b]) => a.localeCompare(b)).map(([currency, daily]) => (
+              <DailyInterestCard key={currency} lent={daily.lent} borrowed={daily.borrowed} net={daily.net} currency={currency} currencyLabel />
+            ))}
           </div>
         )}
 
         {/* Grand total cards */}
         {!loading && grandTotals.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {grandTotals.map(([currency, totals]) => (
-              <div
-                key={currency}
-                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
-                    Grand Total
-                  </span>
-                  <span className="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
-                    {currency}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                    <span>Total Lent</span>
-                    <span className="font-medium text-gray-800 dark:text-slate-200">
-                      {formatCurrency(totals.lent, currency)}
-                    </span>
+          <div className="mb-8 space-y-4">
+            {grandTotals.map(([currency, totals]) => {
+              const typeBreakdown = byTypeMap[currency] ?? {};
+              const typeEntries = Object.entries(typeBreakdown).sort(([a], [b]) => a.localeCompare(b));
+              const showBreakdown = clientTypeFilter === "" && typeEntries.length > 1;
+
+              const TotalsCard = ({ label, t, isGrand = false }: { label: string; t: CurrencyTotals; isGrand?: boolean }) => (
+                <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">{label}</span>
+                    <span className="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">{currency}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                    <span>Total Borrowed</span>
-                    <span className="font-medium text-gray-800 dark:text-slate-200">
-                      {formatCurrency(totals.borrowed, currency)}
-                    </span>
-                  </div>
-                  <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between">
-                    <span className="font-semibold text-gray-700 dark:text-slate-300">
-                      Net Balance
-                    </span>
-                    <span
-                      className={`text-lg font-bold ${
-                        totals.net >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(totals.net, currency)}
-                    </span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
+                      <span>Total Lent</span>
+                      <span className="text-right">
+                        <span className="font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.lent, currency)}</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-500">({formatCurrency(t.principalLent, currency)} principal)</span>
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
+                      <span>Total Borrowed</span>
+                      <span className="text-right">
+                        <span className="font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.borrowed, currency)}</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-500">({formatCurrency(t.principalBorrowed, currency)} principal)</span>
+                      </span>
+                    </div>
+                    <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between">
+                      <span className="font-semibold text-gray-700 dark:text-slate-300">Net Balance</span>
+                      <span className={`${isGrand ? "text-xl" : "text-lg"} font-bold ${t.net >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {formatCurrency(t.net, currency)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+
+              return (
+                <div key={currency} className={`grid gap-4 ${showBreakdown ? `grid-cols-1 sm:grid-cols-${Math.min(typeEntries.length + 1, 3)}` : "grid-cols-1 sm:grid-cols-3"}`}>
+                  {showBreakdown ? (
+                    <>
+                      {typeEntries.map(([typeName, t]) => (
+                        <TotalsCard key={typeName} label={typeName} t={t} />
+                      ))}
+                      <TotalsCard label="Grand Total" t={totals} isGrand />
+                    </>
+                  ) : (
+                    <TotalsCard
+                      label={clientTypeFilter === "financial_institution" ? "Financial Institution" : clientTypeFilter === "individual" ? "Individual" : "Grand Total"}
+                      t={totals}
+                      isGrand
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -409,7 +459,7 @@ export default function SummaryPage() {
             {/* Table header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
               {([
-                ["name", "Client", "col-span-3 text-left"],
+                ["name", "Client", "col-span-2 text-left"],
               ] as const).map(([col, label, cls]) => (
                 <button
                   key={col}
@@ -437,6 +487,7 @@ export default function SummaryPage() {
                 ["txCount", "Txns", "col-span-1 text-center"],
                 ["totalLent", "Total Lent", "col-span-2 text-right"],
                 ["totalBorrowed", "Total Borrowed", "col-span-2 text-right"],
+                ["highestRate", "Highest Rate", "col-span-1 text-right"],
                 ["netBalance", "Net Balance", "col-span-2 text-right"],
               ] as const).map(([col, label, cls]) => (
                 <button
@@ -461,7 +512,7 @@ export default function SummaryPage() {
               </div>
             )}
             {filteredSummaries.map(
-              ({ client, totalLent, totalBorrowed, netBalance, txCount, transactions }) => {
+              ({ client, totalLent, totalBorrowed, netBalance, txCount, highestRate, principalLent, principalBorrowed, transactions }) => {
                 const isExpanded = expandedClients.has(client.id);
                 return (
                 <div key={client.id}>
@@ -482,7 +533,7 @@ export default function SummaryPage() {
                   }}
                 >
                   {/* Client name */}
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <div className="flex items-center gap-2">
                       {showDetailedTx && (
                         <svg
@@ -519,15 +570,32 @@ export default function SummaryPage() {
 
                   {/* Total lent */}
                   <div className="col-span-2 text-right">
-                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
                       {txCount === 0 ? "—" : formatCurrency(totalLent, client.currency)}
                     </span>
+                    {txCount > 0 && (
+                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                        ({formatCurrency(principalLent, client.currency)})
+                      </span>
+                    )}
                   </div>
 
                   {/* Total borrowed */}
                   <div className="col-span-2 text-right">
-                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
                       {txCount === 0 ? "—" : formatCurrency(totalBorrowed, client.currency)}
+                    </span>
+                    {txCount > 0 && (
+                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                        ({formatCurrency(principalBorrowed, client.currency)})
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Highest rate */}
+                  <div className="col-span-1 text-right">
+                    <span className="text-sm text-gray-600 dark:text-slate-300">
+                      {txCount === 0 ? "—" : `${highestRate.toFixed(1)}%`}
                     </span>
                   </div>
 
@@ -664,7 +732,7 @@ export default function SummaryPage() {
                                     {/* Months + Days interest */}
                                     <div className="px-4 py-2 space-y-1 border-b border-violet-200 dark:border-violet-800/40">
                                       <div className="flex justify-between text-gray-600 dark:text-slate-300">
-                                        <span>Months interest ({calc.duration.months % 12}m)</span>
+                                        <span>Months interest ({calc.duration.months}m)</span>
                                         <span className="font-mono">+{formatCurrency(calc.monthsInterest, client.currency)}</span>
                                       </div>
                                       <div className="flex justify-between text-gray-600 dark:text-slate-300">

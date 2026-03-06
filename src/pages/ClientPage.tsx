@@ -1,3 +1,9 @@
+// NOTE FOR MAINTAINERS:
+// This is the authenticated client page. GuestPage (src/pages/GuestPage.tsx) mirrors
+// this page's layout and behaviour for unauthenticated users. If you add or change a
+// feature here (e.g. new toggles, controls, summary cards, table props, modals), make
+// sure the equivalent change is applied to GuestPage.tsx as well so the two stay in sync.
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Transaction, Client } from "../types";
@@ -16,27 +22,10 @@ import {
 } from "../components/ContentSections";
 import { exportToPDF, exportToCSV, importFromCSV } from "../utils/export";
 import { clientsApi } from "../api/clients";
-import { transactionsApi, type TransactionRead } from "../api/transactions";
+import { transactionsApi, apiTransactionToLocal } from "../api/transactions";
 import Navbar from "../components/Navbar";
 import Toast from "../components/Toast";
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function apiToLocal(tx: TransactionRead): Transaction {
-  return {
-    id: tx.id,
-    // Parse as local midnight so timezone doesn't shift the date
-    date: new Date(`${tx.date}T00:00:00`),
-    amount: tx.amount,
-    interestRate: tx.interest_rate,
-    type: tx.type,
-    notes: tx.notes ?? "",
-    completed: tx.completed ?? false,
-    reminderDate: tx.reminder_date
-      ? new Date(`${tx.reminder_date}T00:00:00`)
-      : null,
-  };
-}
+import ToggleButton from "../components/ToggleButton";
 
 // ── component ─────────────────────────────────────────────────────────────────
 
@@ -51,6 +40,8 @@ export default function ClientPage() {
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [sortOrder, setSortOrder] = useState<"chronological" | "entry">("chronological");
+  const [showDetailCalc, setShowDetailCalc] = useState(false);
+  const [showDailyValue, setShowDailyValue] = useState(false);
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info"; details?: { label: string; value: string }[] } | null>(null);
 
@@ -74,7 +65,7 @@ export default function ClientPage() {
       ]);
       setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, clientType: clientData.client_type, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company });
       setNotesDraft(clientData.notes ?? "");
-      setTransactions(txData.map(apiToLocal));
+      setTransactions(txData.map(apiTransactionToLocal));
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
@@ -122,7 +113,7 @@ export default function ClientPage() {
           ? formatDateForInput(transaction.reminderDate)
           : undefined,
       });
-      const local = apiToLocal(created);
+      const local = apiTransactionToLocal(created);
       setTransactions((prev) => [...prev, local]);
       setToast({
         message: "Transaction added",
@@ -165,7 +156,7 @@ export default function ClientPage() {
           : null,
       });
       setTransactions((prev) =>
-        prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))
+        prev.map((t) => (t.id === result.id ? apiTransactionToLocal(result) : t))
       );
     } catch (err) {
       alert(`Failed to update: ${err instanceof Error ? err.message : err}`);
@@ -176,20 +167,10 @@ export default function ClientPage() {
     try {
       const result = await transactionsApi.update(id, { completed });
       setTransactions((prev) =>
-        prev.map((t) => (t.id === result.id ? apiToLocal(result) : t))
+        prev.map((t) => (t.id === result.id ? apiTransactionToLocal(result) : t))
       );
     } catch (err) {
       alert(`Failed to update: ${err instanceof Error ? err.message : err}`);
-    }
-  };
-
-  const handleClearAll = async () => {
-    if (!window.confirm(`Delete all ${transactions.length} transactions? This cannot be undone.`)) return;
-    try {
-      await Promise.all(transactions.map((t) => transactionsApi.delete(t.id)));
-      setTransactions([]);
-    } catch (err) {
-      alert(`Failed to clear: ${err instanceof Error ? err.message : err}`);
     }
   };
 
@@ -221,7 +202,7 @@ export default function ClientPage() {
               })
             )
           );
-          setTransactions((prev) => [...prev, ...created.map(apiToLocal)]);
+          setTransactions((prev) => [...prev, ...created.map(apiTransactionToLocal)]);
           alert(`Successfully imported ${created.length} transactions!`);
         } catch (err) {
           alert(`Import failed: ${err instanceof Error ? err.message : err}`);
@@ -246,7 +227,7 @@ export default function ClientPage() {
           transactionsApi.update(t.id, { interest_rate: rate })
         )
       );
-      setTransactions(updated.map(apiToLocal));
+      setTransactions(updated.map(apiTransactionToLocal));
       setShowBulkUpdateModal(false);
       setNewBulkRate("");
       alert(`Updated interest rate to ${rate}% for all ${transactions.length} transactions`);
@@ -305,7 +286,7 @@ export default function ClientPage() {
         </div>
 
         {/* As of Date */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">As of Date</label>
             <DateInput
@@ -314,11 +295,26 @@ export default function ClientPage() {
               className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          <ToggleButton
+            active={showDetailCalc}
+            onClick={() => setShowDetailCalc((v) => !v)}
+            activeColor="violet"
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+          >
+            {showDetailCalc ? "Hide Calculations" : "Show Detail Calculations"}
+          </ToggleButton>
+          <ToggleButton
+            active={showDailyValue}
+            onClick={() => setShowDailyValue((v) => !v)}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+          >
+            {showDailyValue ? "Hide Daily Value" : "Daily Value"}
+          </ToggleButton>
         </div>
 
         {/* Summary */}
         {client && (
-          <Summary transactions={transactions} asOfDate={asOfDate} currency={client.currency} />
+          <Summary transactions={transactions} asOfDate={asOfDate} currency={client.currency} showDailyValue={showDailyValue} />
         )}
 
         {/* Transaction Form */}
@@ -378,13 +374,6 @@ export default function ClientPage() {
                   CSV
                 </button>
               </div>
-              <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
-              <button
-                onClick={handleClearAll}
-                className="px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 rounded-lg transition-colors"
-              >
-                Clear All
-              </button>
             </div>
           </div>
         </div>
@@ -398,6 +387,7 @@ export default function ClientPage() {
             onDeleteTransaction={handleDeleteTransaction}
             onUpdateTransaction={handleUpdateTransaction}
             onToggleCompleted={handleToggleCompleted}
+            showDetailCalc={showDetailCalc}
           />
         )}
 

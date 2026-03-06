@@ -13,7 +13,7 @@ import DashboardPage from './pages/DashboardPage'
 import ClientPage from './pages/ClientPage'
 import SummaryPage from './pages/SummaryPage'
 import AboutPage from './pages/AboutPage'
-import App from './App'
+import GuestPage from './pages/GuestPage'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 
@@ -28,7 +28,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/guest" element={<App />} />
+          <Route path="/guest" element={<GuestPage />} />
           <Route
             path="/"
             element={

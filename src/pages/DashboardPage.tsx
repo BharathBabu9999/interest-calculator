@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { clientsApi, type ClientRead, type ClientCreate } from "../api/clients";
-import { transactionsApi } from "../api/transactions";
+import { transactionsApi, apiTransactionToLocal } from "../api/transactions";
 import { calculateTotalBalance } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
 import Navbar from "../components/Navbar";
@@ -75,15 +75,7 @@ export default function DashboardPage() {
       const txLists = await Promise.all(clientList.map((c) => transactionsApi.list(c.id)));
       const map: Record<string, number> = {};
       clientList.forEach((c, i) => {
-        const transactions = txLists[i].map((tx) => ({
-          id: tx.id,
-          date: new Date(`${tx.date}T00:00:00`),
-          amount: tx.amount,
-          interestRate: tx.interest_rate,
-          type: tx.type as "lend" | "borrow",
-          notes: tx.notes ?? "",
-          completed: tx.completed ?? false,
-        }));
+        const transactions = txLists[i].map(apiTransactionToLocal);
         const { netBalance } = calculateTotalBalance(transactions, now);
         map[c.id] = netBalance;
       });

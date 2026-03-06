@@ -11,6 +11,7 @@ interface TransactionTableProps {
   onDeleteTransaction: (id: string) => void;
   onUpdateTransaction: (transaction: Transaction) => void;
   onToggleCompleted: (id: string, completed: boolean) => void;
+  showDetailCalc?: boolean;
 }
 
 type SortColumn =
@@ -32,6 +33,7 @@ type SortColumn =
     onDeleteTransaction,
     onUpdateTransaction,
     onToggleCompleted,
+    showDetailCalc = false,
   }: TransactionTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -377,134 +379,58 @@ type SortColumn =
                       </button>
                     </td>
                   </tr>
-                  {isExpanded && (
+                  {(isExpanded || (showDetailCalc && !isCompleted)) && (
                     <tr>
-                      <td colSpan={9} className="px-6 py-4 bg-gray-50 dark:bg-slate-700/30">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">Calculation Breakdown</h4>
-                          
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Duration</p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                                {breakdown.duration.years}yrs {breakdown.duration.months}months{' '}
-                                {breakdown.duration.days}days
-                              </p>
+                      <td colSpan={9} className="px-6 py-0 pb-4 bg-gray-50 dark:bg-slate-700/30">
+                        <div className="rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/10 text-xs overflow-hidden">
+                          {/* Header */}
+                          <div className="flex items-center gap-4 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
+                            <span className="font-semibold text-violet-700 dark:text-violet-300">Calculation Breakdown</span>
+                            <span className="text-violet-500 dark:text-violet-400">
+                              {breakdown.duration.years}y {breakdown.duration.months}m {breakdown.duration.days}d
+                            </span>
+                            <span className="ml-auto font-medium text-gray-600 dark:text-slate-300">
+                              Principal: {formatCurrency(breakdown.originalAmount, currency)}
+                            </span>
+                          </div>
+
+                          {/* Annual Compounding */}
+                          {breakdown.compoundingSteps.length > 0 && (
+                            <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-1">
+                              <p className="font-semibold text-violet-600 dark:text-violet-400 mb-1">Annual Compounding</p>
+                              {breakdown.compoundingSteps.map((step, i) => (
+                                <div key={i} className="flex justify-between text-gray-600 dark:text-slate-300">
+                                  <span>Year {i + 1} ({formatDateForDisplay(step.date)})</span>
+                                  <span className="font-mono">
+                                    {formatCurrency(step.principalBefore, currency)}
+                                    {' × '}{transaction.interestRate}% × 12 = +{formatCurrency(step.interest, currency)}
+                                    {' → '}{formatCurrency(step.principalAfter, currency)}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Original Amount</p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                                {formatCurrency(breakdown.originalAmount, currency)}
-                              </p>
+                          )}
+
+                          {/* Months + Days */}
+                          <div className="px-4 py-2 space-y-1 border-b border-violet-200 dark:border-violet-800/40">
+                            <div className="flex justify-between text-gray-600 dark:text-slate-300">
+                              <span>Months interest ({breakdown.duration.months}m)</span>
+                              <span className="font-mono">+{formatCurrency(breakdown.monthsInterest, currency)}</span>
                             </div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Years Interest</p>
-                              <p className="text-sm font-medium text-green-600">
-                                {formatCurrency(breakdown.yearsInterest, currency)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Months Interest</p>
-                              <p className="text-sm font-medium text-green-600">
-                                {formatCurrency(breakdown.monthsInterest, currency)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Days Interest</p>
-                              <p className="text-sm font-medium text-green-600">
-                                {formatCurrency(breakdown.daysInterest, currency)}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-slate-400">Current Value</p>
-                              <p className="text-sm font-bold text-blue-600">
-                                {formatCurrency(breakdown.currentValue, currency)}
-                              </p>
+                            <div className="flex justify-between text-gray-600 dark:text-slate-300">
+                              <span>Days interest ({breakdown.duration.days}d)</span>
+                              <span className="font-mono">+{formatCurrency(breakdown.daysInterest, currency)}</span>
                             </div>
                           </div>
 
-                          {breakdown.compoundingSteps.length > 0 && (
-                            <div className="mt-4">
-                                  <h5 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
-                                Annual Compounding Steps
-                              </h5>
-                              <div className="overflow-x-auto">
-                                <table className="min-w-full text-sm">
-                                  <thead className="bg-gray-100 dark:bg-slate-700">
-                                    <tr>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        Year
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        Date
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        Principal Before
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        Interest
-                                      </th>
-                                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-slate-400">
-                                        Principal After
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                                    {breakdown.compoundingSteps.map((step, idx) => (
-                                      <tr key={idx}>
-                                        <td className="px-3 py-2 dark:text-slate-300">{step.year}</td>
-                                        <td className="px-3 py-2 dark:text-slate-300">
-                                          {formatDateForDisplay(step.date)}
-                                        </td>
-                                        <td className="px-3 py-2 dark:text-slate-300">
-                                          {formatCurrency(step.principalBefore, currency)}
-                                        </td>
-                                        <td className="px-3 py-2 text-green-600 dark:text-green-400">
-                                          {formatCurrency(step.interest, currency)}
-                                        </td>
-                                        <td className="px-3 py-2 font-semibold dark:text-white">
-                                          {formatCurrency(step.principalAfter, currency)}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                    {/* Remaining Months Row */}
-                                    {breakdown.duration.months > 0 && (() => {
-                                      const lastStep = breakdown.compoundingSteps[breakdown.compoundingSteps.length - 1];
-                                      const principal = lastStep ? lastStep.principalAfter : breakdown.originalAmount;
-                                      const monthEndDate = new Date(asOfDate);
-                                      monthEndDate.setDate(monthEndDate.getDate() - breakdown.duration.days);
-                                      
-                                      return (
-                                          <tr className="bg-gray-50 dark:bg-slate-700/40">
-                                          <td className="px-3 py-2 italic text-gray-500 dark:text-slate-400">Months ({breakdown.duration.months})</td>
-                                          <td className="px-3 py-2 italic text-gray-500 dark:text-slate-400">{formatDateForDisplay(monthEndDate)}</td>
-                                          <td className="px-3 py-2 text-gray-500 dark:text-slate-400">{formatCurrency(principal, currency)}</td>
-                                          <td className="px-3 py-2 green-600 dark:text-green-400 font-medium">+{formatCurrency(breakdown.monthsInterest, currency)}</td>
-                                          <td className="px-3 py-2 text-gray-700 dark:text-slate-300">{formatCurrency(principal + breakdown.monthsInterest, currency)}</td>
-                                        </tr>
-                                      );
-                                    })()}
-                                    {/* Remaining Days Row */}
-                                    {breakdown.duration.days > 0 && (() => {
-                                      const lastStep = breakdown.compoundingSteps[breakdown.compoundingSteps.length - 1];
-                                      const principal = lastStep ? lastStep.principalAfter : breakdown.originalAmount;
-                                      const runningPrincipal = principal + breakdown.monthsInterest;
-                                      
-                                      return (
-                                          <tr className="bg-gray-50 dark:bg-slate-700/40">
-                                          <td className="px-3 py-2 italic text-gray-500 dark:text-slate-400">Days ({breakdown.duration.days})</td>
-                                          <td className="px-3 py-2 italic text-gray-500 dark:text-slate-400">{formatDateForDisplay(asOfDate)}</td>
-                                          <td className="px-3 py-2 text-gray-500 dark:text-slate-400">{formatCurrency(runningPrincipal, currency)}</td>
-                                          <td className="px-3 py-2 text-green-600 dark:text-green-400 font-medium">+{formatCurrency(breakdown.daysInterest, currency)}</td>
-                                          <td className="px-3 py-2 font-bold text-gray-900 dark:text-white">{formatCurrency(breakdown.currentValue, currency)}</td>
-                                        </tr>
-                                      );
-                                    })()}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
+                          {/* Current Value */}
+                          <div className="flex justify-between px-4 py-2 font-semibold">
+                            <span className="text-gray-700 dark:text-slate-200">Current Value (with interest)</span>
+                            <span className={transaction.type === 'lend' ? 'text-green-600' : 'text-red-500'}>
+                              {formatCurrency(breakdown.currentValue, currency)}
+                            </span>
+                          </div>
+
                         </div>
                       </td>
                     </tr>
