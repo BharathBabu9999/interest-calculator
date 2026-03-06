@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { clientsApi, type ClientRead } from "../api/clients";
 import { transactionsApi, type TransactionRead } from "../api/transactions";
-import { calculateTotalBalance } from "../utils/calculator";
+import { calculateTotalBalance, calculateCurrentValue } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
 import DateInput from "../components/DateInput";
 import { exportSummaryToPDF, exportSummaryToExcel, type SummaryExportRow } from "../utils/export";
@@ -32,6 +32,7 @@ interface ClientSummary {
   totalBorrowed: number;
   netBalance: number;
   txCount: number;
+  transactions: Transaction[];
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -49,7 +50,16 @@ export default function SummaryPage() {
   const [clientTypeFilter, setClientTypeFilter] = useState<"" | "individual" | "financial_institution">("");
   const [netBalanceOp, setNetBalanceOp] = useState<"" | ">" | "<">("");
   const [netBalanceVal, setNetBalanceVal] = useState("");
+  const [showDetailedTx, setShowDetailedTx] = useState(false);
+  const [showDetailCalc, setShowDetailCalc] = useState(false);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
 
+  const toggleExpanded = (id: string) =>
+    setExpandedClients((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   const toggleExcluded = (id: string) =>
     setExcluded((prev) => {
       const next = new Set(prev);
@@ -95,6 +105,7 @@ export default function SummaryPage() {
           totalBorrowed,
           netBalance,
           txCount: transactions.length,
+          transactions,
         };
       });
 
@@ -235,9 +246,10 @@ export default function SummaryPage() {
           </div>
         )}
 
-        {/* Filters */}
+        {/* Filters + Show Transactions toggle */}
         {!loading && summaries.length > 0 && (
-          <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={clientTypeFilter}
               onChange={(e) => setClientTypeFilter(e.target.value as "" | "individual" | "financial_institution")}
@@ -266,6 +278,47 @@ export default function SummaryPage() {
                 disabled={netBalanceOp === ""}
                 className="w-36 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 rounded-r-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40"
               />
+            </div>
+            </div>
+            {/* Show Transactions + Detail Calculations toggles */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  const next = !showDetailedTx;
+                  setShowDetailedTx(next);
+                  if (next) {
+                    setExpandedClients(new Set(summaries.map((s) => s.client.id)));
+                  } else {
+                    setExpandedClients(new Set());
+                    setShowDetailCalc(false);
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                  showDetailedTx
+                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                    : "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                {showDetailedTx ? "Hide Transactions" : "Show Transactions"}
+              </button>
+              {showDetailedTx && (
+                <button
+                  onClick={() => setShowDetailCalc((v) => !v)}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                    showDetailCalc
+                      ? "bg-violet-600 text-white border-violet-600 hover:bg-violet-700"
+                      : "bg-white dark:bg-slate-700 text-gray-700 dark:text-slate-200 border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {showDetailCalc ? "Hide Calculations" : "Show Detail Calculations"}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -408,22 +461,48 @@ export default function SummaryPage() {
               </div>
             )}
             {filteredSummaries.map(
-              ({ client, totalLent, totalBorrowed, netBalance, txCount }) => (
+              ({ client, totalLent, totalBorrowed, netBalance, txCount, transactions }) => {
+                const isExpanded = expandedClients.has(client.id);
+                return (
+                <div key={client.id}>
                 <div
-                  key={client.id}
-                  className={`grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 last:border-0 items-center hover:bg-gray-50/60 dark:hover:bg-slate-700/30 transition-colors group cursor-pointer ${
+                  className={`grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 items-center transition-colors group ${
                     excluded.has(client.id) ? "opacity-40" : ""
+                  } ${
+                    showDetailedTx
+                      ? "hover:bg-gray-50/60 dark:hover:bg-slate-700/30 cursor-pointer"
+                      : "hover:bg-gray-50/60 dark:hover:bg-slate-700/30 cursor-pointer"
                   }`}
-                  onClick={() => navigate(`/clients/${client.id}`)}
+                  onClick={() => {
+                    if (showDetailedTx) {
+                      toggleExpanded(client.id);
+                    } else {
+                      navigate(`/clients/${client.id}`);
+                    }
+                  }}
                 >
                   {/* Client name */}
                   <div className="col-span-3">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">
-                      {client.name}
-                    </p>
-                    <span className="text-xs text-gray-400 dark:text-slate-500">
-                      {client.currency}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {showDetailedTx && (
+                        <svg
+                          className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform duration-200 ${
+                            isExpanded ? "rotate-90" : ""
+                          }`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                          {client.name}
+                        </p>
+                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                          {client.currency}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Client type */}
@@ -441,18 +520,14 @@ export default function SummaryPage() {
                   {/* Total lent */}
                   <div className="col-span-2 text-right">
                     <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      {txCount === 0
-                        ? "—"
-                        : formatCurrency(totalLent, client.currency)}
+                      {txCount === 0 ? "—" : formatCurrency(totalLent, client.currency)}
                     </span>
                   </div>
 
                   {/* Total borrowed */}
                   <div className="col-span-2 text-right">
                     <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      {txCount === 0
-                        ? "—"
-                        : formatCurrency(totalBorrowed, client.currency)}
+                      {txCount === 0 ? "—" : formatCurrency(totalBorrowed, client.currency)}
                     </span>
                   </div>
 
@@ -490,7 +565,142 @@ export default function SummaryPage() {
                     />
                   </div>
                 </div>
-              )
+
+                {/* Detailed transactions sub-panel */}
+                {showDetailedTx && isExpanded && (
+                  <div className="bg-gray-50 dark:bg-slate-900/40 border-b border-gray-100 dark:border-slate-700/60">
+                    {transactions.length === 0 ? (
+                      <p className="px-10 py-4 text-xs text-gray-400 dark:text-slate-500 italic">No transactions yet.</p>
+                    ) : (
+                      <>
+                        {/* Mini header */}
+                        <div className="grid grid-cols-12 gap-3 px-10 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700/60">
+                          <div className="col-span-2">Date</div>
+                          <div className="col-span-1">Type</div>
+                          <div className="col-span-2 text-right">Amount</div>
+                          <div className="col-span-1 text-right">Rate</div>
+                          <div className="col-span-2 text-right">Balance</div>
+                          <div className="col-span-2">Repayment</div>
+                          <div className="col-span-2">Notes</div>
+                        </div>
+                        {/* Rows */}
+                        {[...transactions]
+                          .sort((a, b) => a.date.getTime() - b.date.getTime())
+                          .map((tx) => {
+                            const bal = calculateTotalBalance([tx], asOfDate);
+                            const txNet = tx.type === "lend" ? bal.netBalance : -bal.netBalance;
+                            const calc = showDetailCalc ? calculateCurrentValue(tx, asOfDate) : null;
+                            return (
+                              <div key={tx.id} className={`border-b border-gray-100 dark:border-slate-700/40 last:border-0 ${tx.completed ? "opacity-50" : ""}` }>
+                                {/* Summary row */}
+                                <div className="grid grid-cols-12 gap-3 px-10 py-2.5 text-xs">
+                                  <div className="col-span-2 text-gray-600 dark:text-slate-400 font-mono">
+                                    {tx.date.toLocaleDateString("en-GB")}
+                                  </div>
+                                  <div className="col-span-1">
+                                    <span
+                                      className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold ${
+                                        tx.type === "lend"
+                                          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                          : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                      }`}
+                                    >
+                                      {tx.type === "lend" ? "Lend" : "Borrow"}
+                                    </span>
+                                  </div>
+                                  <div className="col-span-2 text-right font-medium text-gray-700 dark:text-slate-300">
+                                    {formatCurrency(tx.amount, client.currency)}
+                                  </div>
+                                  <div className="col-span-1 text-right text-gray-500 dark:text-slate-400">
+                                    {tx.interestRate}%
+                                  </div>
+                                  <div className={`col-span-2 text-right font-semibold ${
+                                    tx.completed ? "text-gray-400" :
+                                    tx.type === "lend" ? "text-green-600" : "text-red-500"
+                                  }`}>
+                                    {tx.completed ? "Completed" : `${txNet >= 0 ? "+" : ""}${formatCurrency(txNet, client.currency)}`}
+                                  </div>
+                                  <div className="col-span-2 text-gray-500 dark:text-slate-400">
+                                    {tx.expectedRepaymentDate
+                                      ? tx.expectedRepaymentDate.toLocaleDateString("en-GB")
+                                      : "—"}
+                                  </div>
+                                  <div className="col-span-2 text-gray-500 dark:text-slate-400 truncate" title={tx.notes}>
+                                    {tx.notes || "—"}
+                                  </div>
+                                </div>
+
+                                {/* Detail calculation breakdown */}
+                                {calc && !tx.completed && (
+                                  <div className="mx-10 mb-3 rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/10 text-xs overflow-hidden">
+                                    {/* Duration header */}
+                                    <div className="flex items-center gap-4 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
+                                      <span className="font-semibold text-violet-700 dark:text-violet-300">Calculation Breakdown</span>
+                                      <span className="text-violet-500 dark:text-violet-400">
+                                        {calc.duration.years}y {calc.duration.months}m {calc.duration.days}d
+                                      </span>
+                                      <span className="ml-auto font-medium text-gray-600 dark:text-slate-300">
+                                        Principal: {formatCurrency(calc.originalAmount, client.currency)}
+                                      </span>
+                                    </div>
+
+                                    {/* Compounding steps */}
+                                    {calc.compoundingSteps.length > 0 && (
+                                      <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-1">
+                                        <p className="font-semibold text-violet-600 dark:text-violet-400 mb-1">Annual Compounding</p>
+                                        {calc.compoundingSteps.map((step, i) => (
+                                          <div key={i} className="flex justify-between text-gray-600 dark:text-slate-300">
+                                            <span>Year {i + 1} ({step.date.toLocaleDateString("en-GB")})</span>
+                                            <span className="font-mono">
+                                              {formatCurrency(step.principalBefore, client.currency)}
+                                              {" × "}{tx.interestRate}% × 12 = +{formatCurrency(step.interest, client.currency)}
+                                              {" → "}{formatCurrency(step.principalAfter, client.currency)}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Months + Days interest */}
+                                    <div className="px-4 py-2 space-y-1 border-b border-violet-200 dark:border-violet-800/40">
+                                      <div className="flex justify-between text-gray-600 dark:text-slate-300">
+                                        <span>Months interest ({calc.duration.months % 12}m)</span>
+                                        <span className="font-mono">+{formatCurrency(calc.monthsInterest, client.currency)}</span>
+                                      </div>
+                                      <div className="flex justify-between text-gray-600 dark:text-slate-300">
+                                        <span>Days interest ({calc.duration.days}d)</span>
+                                        <span className="font-mono">+{formatCurrency(calc.daysInterest, client.currency)}</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Total */}
+                                    <div className="flex justify-between px-4 py-2 font-semibold">
+                                      <span className="text-gray-700 dark:text-slate-200">Current Value (with interest)</span>
+                                      <span className={tx.type === "lend" ? "text-green-600" : "text-red-500"}>
+                                        {formatCurrency(calc.currentValue, client.currency)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        {/* View client link */}
+                        <div className="px-10 py-2.5 flex justify-end">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`); }}
+                            className="text-xs text-blue-600 hover:underline font-medium"
+                          >
+                            View full client page →
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                </div>
+              );
+            }
             )}
           </div>
         )}
