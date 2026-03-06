@@ -59,10 +59,10 @@ type SortColumn =
       case 'notes':
         return (a.notes || '').localeCompare(b.notes || '');
       case 'repaymentDate':
-        if (!a.expectedRepaymentDate && !b.expectedRepaymentDate) return 0;
-        if (!a.expectedRepaymentDate) return 1;
-        if (!b.expectedRepaymentDate) return -1;
-        return a.expectedRepaymentDate.getTime() - b.expectedRepaymentDate.getTime();
+        if (!a.reminderDate && !b.reminderDate) return 0;
+        if (!a.reminderDate) return 1;
+        if (!b.reminderDate) return -1;
+        return a.reminderDate.getTime() - b.reminderDate.getTime();
       case 'currentValue':
         return a._currentValue - b._currentValue;
       case 'status':
@@ -154,7 +154,7 @@ type SortColumn =
                 Notes {sortIcon('notes')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('repaymentDate')}>
-                Repayment Date {sortIcon('repaymentDate')}
+                Reminder Date {sortIcon('repaymentDate')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('currentValue')}>
                 Current Value {sortIcon('currentValue')}
@@ -189,7 +189,7 @@ type SortColumn =
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{transaction.interestRate}%</td>
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">{transaction.notes || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
-                        {transaction.expectedRepaymentDate ? formatDateForDisplay(transaction.expectedRepaymentDate) : <span className="text-gray-300 dark:text-slate-600">—</span>}
+                        {transaction.reminderDate ? formatDateForDisplay(transaction.reminderDate) : <span className="text-gray-300 dark:text-slate-600">—</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(breakdown.currentValue, currency)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">—</td>
@@ -245,18 +245,18 @@ type SortColumn =
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Expected Repayment</label>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Reminder Date</label>
                             <input
                               type="text"
                               placeholder="DD/MM/YYYY"
-                              defaultValue={editForm.expectedRepaymentDate ? formatDateForDisplay(editForm.expectedRepaymentDate) : ''}
+                              defaultValue={editForm.reminderDate ? formatDateForDisplay(editForm.reminderDate) : ''}
                               onBlur={(e) => {
                                 const v = e.target.value.trim();
                                 if (!v) {
-                                  setEditForm({ ...editForm, expectedRepaymentDate: null });
+                                  setEditForm({ ...editForm, reminderDate: null });
                                 } else {
                                   const parsed = parseDDMMYYYY(v);
-                                  if (parsed) setEditForm({ ...editForm, expectedRepaymentDate: parsed });
+                                  if (parsed) setEditForm({ ...editForm, reminderDate: parsed });
                                 }
                               }}
                               className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -330,8 +330,8 @@ type SortColumn =
                       {transaction.notes || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
-                      {transaction.expectedRepaymentDate
-                        ? formatDateForDisplay(transaction.expectedRepaymentDate)
+                      {transaction.reminderDate
+                        ? formatDateForDisplay(transaction.reminderDate)
                         : <span className="text-gray-300 dark:text-slate-600">—</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">

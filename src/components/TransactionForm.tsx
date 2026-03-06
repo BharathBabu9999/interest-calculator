@@ -44,7 +44,7 @@ const transactionSchema = z.object({
   interestRate: z.number().min(0, 'Interest rate must be non-negative'),
   type: z.enum(['lend', 'borrow']),
   notes: z.string(),
-  expectedRepaymentDate: optionalDateStringSchema,
+  reminderDate: optionalDateStringSchema,
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -70,7 +70,7 @@ export default function TransactionForm({ onAddTransaction, loading }: Transacti
       interestRate: 2,
       type: 'lend',
       notes: '',
-      expectedRepaymentDate: '',
+      reminderDate: '',
     },
   });
 
@@ -79,10 +79,10 @@ export default function TransactionForm({ onAddTransaction, loading }: Transacti
     const [day, month, year] = data.date.split('/').map(Number);
     const parsedDate = new Date(year, month - 1, day);
 
-    let expectedRepaymentDate: Date | null = null;
-    if (data.expectedRepaymentDate) {
-      const [rd, rm, ry] = data.expectedRepaymentDate.split('/').map(Number);
-      expectedRepaymentDate = new Date(ry, rm - 1, rd);
+    let reminderDate: Date | null = null;
+    if (data.reminderDate) {
+      const [rd, rm, ry] = data.reminderDate.split('/').map(Number);
+      reminderDate = new Date(ry, rm - 1, rd);
     }
     
     const transaction: Transaction = {
@@ -93,11 +93,11 @@ export default function TransactionForm({ onAddTransaction, loading }: Transacti
       type: data.type,
       notes: data.notes,
       completed: false,
-      expectedRepaymentDate,
+      reminderDate,
     };
 
     onAddTransaction(transaction);
-    reset({ ...data, date: formatDateForDisplay(new Date()), expectedRepaymentDate: '' });
+    reset({ ...data, date: formatDateForDisplay(new Date()), reminderDate: '' });
   };
 
   return (
@@ -191,17 +191,17 @@ export default function TransactionForm({ onAddTransaction, loading }: Transacti
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-              Expected Repayment <span className="text-gray-400 font-normal">(optional)</span>
+              Reminder Date <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <input
               type="text"
               placeholder="DD/MM/YYYY"
-              {...register('expectedRepaymentDate')}
+              {...register('reminderDate')}
               className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={10}
             />
-            {errors.expectedRepaymentDate && (
-              <p className="text-red-500 text-xs mt-1">{errors.expectedRepaymentDate.message}</p>
+            {errors.reminderDate && (
+              <p className="text-red-500 text-xs mt-1">{errors.reminderDate.message}</p>
             )}
           </div>
         </div>

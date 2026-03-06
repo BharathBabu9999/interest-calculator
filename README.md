@@ -35,6 +35,9 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Per-currency grouping** — grand totals grouped by currency (respects active filters)
 - **Click-through** — click any client row to jump straight to their transaction page
 - **Add Client shortcut** — "+ Add Client" button on the Summary page navigates to the Dashboard and automatically opens the Add Client modal
+- **Show Transactions toggle** — toggle on to expand each client row and reveal a per-transaction mini-table (Date, Type, Amount, Rate, Balance, Reminder Date, Notes); click a row to expand/collapse individually
+- **Show Detail Calculations** — appears when Show Transactions is on; per-transaction breakdown showing duration, annual compounding steps, months interest, days interest, and current value
+- **Reminder Date column** — renamed from "Repayment Date"; shown in the expanded transaction rows and in the full client transaction table
 
 ### Guest Mode
 - **Try without registering** — visit `/guest` to use the full calculator with localStorage-only persistence (no account needed)
@@ -191,7 +194,7 @@ The app runs at **http://localhost:5173**.
 1. Open `http://localhost:5173` → click **"Create one"** to register (or use **Continue with Google**)
 2. On the dashboard, click **"+ Add Client"** — enter a name, **client type** (Individual or Financial Institution), currency, and optional contact details
 3. Click the client card → you're in the transaction view
-4. Add **Lend** or **Borrow** transactions; set an optional **Expected Repayment Date** in DD/MM/YYYY format; interest is calculated live
+4. Add **Lend** or **Borrow** transactions; set an optional **Reminder Date** in DD/MM/YYYY format; interest is calculated live
 5. Click any row to expand the step-by-step compounding breakdown
 6. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
 7. Click **"Portfolio Summary"** in the nav to see totals across all clients; use **"+ Add Client"** there to go straight to the Add Client modal
@@ -285,7 +288,7 @@ interest-calc/
 ```
 User (email, hashed_password, google_id)
  └── Client (name, client_type, currency, phone, email, address, company, notes)
-       ├── Transaction (date, amount, interest_rate, type, notes, completed, expected_repayment_date)
+       ├── Transaction (date, amount, interest_rate, type, notes, completed, reminder_date)
        └── ClientFile (original_filename, mimetype, size, description, stored on disk)
 
 PasswordResetToken (user_id, token, expires_at, used)
@@ -313,7 +316,7 @@ $$\text{New Principal} = \text{Old Principal} \times (1 + \text{rate} \times 12)
 ## 📝 CSV Import Format
 
 ```
-Date,Amount,Interest Rate,Type,Notes,Expected Repayment Date
+Date,Amount,Interest Rate,Type,Notes,Reminder Date
 19/03/2019,450000,1.5,lend,Initial funding,
 10/04/2021,100000,2,lend,,31/12/2026
 15/06/2024,50000,1.8,borrow,Partial payment,
@@ -322,7 +325,7 @@ Date,Amount,Interest Rate,Type,Notes,Expected Repayment Date
 - **Date**: DD/MM/YYYY (also accepts YYYY-MM-DD)
 - **Interest Rate**: monthly percentage (e.g. `2` = 2% per month)
 - **Type**: `lend` or `borrow`
-- **Expected Repayment Date**: optional, DD/MM/YYYY (leave blank to omit)
+- **Reminder Date**: optional, DD/MM/YYYY (leave blank to omit)
 
 ---
 

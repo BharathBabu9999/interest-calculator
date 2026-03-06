@@ -6,7 +6,7 @@ export interface Transaction {
   type: 'lend' | 'borrow';
   notes: string;
   completed: boolean;
-  expectedRepaymentDate?: Date | null;
+  reminderDate?: Date | null;
 }
 
 export type ClientType = 'individual' | 'financial_institution';

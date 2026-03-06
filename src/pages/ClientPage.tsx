@@ -32,8 +32,8 @@ function apiToLocal(tx: TransactionRead): Transaction {
     type: tx.type,
     notes: tx.notes ?? "",
     completed: tx.completed ?? false,
-    expectedRepaymentDate: tx.expected_repayment_date
-      ? new Date(`${tx.expected_repayment_date}T00:00:00`)
+    reminderDate: tx.reminder_date
+      ? new Date(`${tx.reminder_date}T00:00:00`)
       : null,
   };
 }
@@ -118,8 +118,8 @@ export default function ClientPage() {
         interest_rate: transaction.interestRate,
         type: transaction.type,
         notes: transaction.notes || undefined,
-        expected_repayment_date: transaction.expectedRepaymentDate
-          ? formatDateForInput(transaction.expectedRepaymentDate)
+        reminder_date: transaction.reminderDate
+          ? formatDateForInput(transaction.reminderDate)
           : undefined,
       });
       const local = apiToLocal(created);
@@ -160,8 +160,8 @@ export default function ClientPage() {
         type: updated.type,
         notes: updated.notes || undefined,
         completed: updated.completed,
-        expected_repayment_date: updated.expectedRepaymentDate
-          ? formatDateForInput(updated.expectedRepaymentDate)
+        reminder_date: updated.reminderDate
+          ? formatDateForInput(updated.reminderDate)
           : null,
       });
       setTransactions((prev) =>

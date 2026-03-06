@@ -9,7 +9,7 @@ export interface TransactionRead {
   type: "lend" | "borrow";
   notes: string | null;
   completed: boolean;
-  expected_repayment_date: string | null;
+  reminder_date: string | null;
   created_at: string;
 }
 
@@ -20,7 +20,7 @@ export interface TransactionCreate {
   type: "lend" | "borrow";
   notes?: string;
   completed?: boolean;
-  expected_repayment_date?: string;
+  reminder_date?: string;
 }
 
 export interface TransactionUpdate {
@@ -30,7 +30,7 @@ export interface TransactionUpdate {
   type?: "lend" | "borrow";
   notes?: string;
   completed?: boolean;
-  expected_repayment_date?: string | null;
+  reminder_date?: string | null;
 }
 
 export const transactionsApi = {

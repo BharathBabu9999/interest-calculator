@@ -20,8 +20,8 @@ function apiToLocal(tx: TransactionRead): Transaction {
     type: tx.type,
     notes: tx.notes ?? "",
     completed: tx.completed ?? false,
-    expectedRepaymentDate: tx.expected_repayment_date
-      ? new Date(`${tx.expected_repayment_date}T00:00:00`)
+    reminderDate: tx.reminder_date
+      ? new Date(`${tx.reminder_date}T00:00:00`)
       : null,
   };
 }
@@ -580,7 +580,7 @@ export default function SummaryPage() {
                           <div className="col-span-2 text-right">Amount</div>
                           <div className="col-span-1 text-right">Rate</div>
                           <div className="col-span-2 text-right">Balance</div>
-                          <div className="col-span-2">Repayment</div>
+                          <div className="col-span-2">Reminder</div>
                           <div className="col-span-2">Notes</div>
                         </div>
                         {/* Rows */}
@@ -621,8 +621,8 @@ export default function SummaryPage() {
                                     {tx.completed ? "Completed" : `${txNet >= 0 ? "+" : ""}${formatCurrency(txNet, client.currency)}`}
                                   </div>
                                   <div className="col-span-2 text-gray-500 dark:text-slate-400">
-                                    {tx.expectedRepaymentDate
-                                      ? tx.expectedRepaymentDate.toLocaleDateString("en-GB")
+                                    {tx.reminderDate
+                                      ? tx.reminderDate.toLocaleDateString("en-GB")
                                       : "—"}
                                   </div>
                                   <div className="col-span-2 text-gray-500 dark:text-slate-400 truncate" title={tx.notes}>
