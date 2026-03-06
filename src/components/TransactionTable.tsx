@@ -2,7 +2,7 @@ import { useState, Fragment } from 'react';
 import type { Transaction } from '../types';
 import { calculateCurrentValue } from '../utils/calculator';
 import { formatCurrency } from '../utils/currency';
-import { formatDateForInput, formatDateForDisplay } from '../utils/dateUtils';
+import { formatDateForDisplay, parseDDMMYYYY } from '../utils/dateUtils';
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -26,6 +26,7 @@ export default function TransactionTable({
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Transaction | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
 
   const sortedTransactions =
     sortOrder === 'chronological'
@@ -110,101 +111,130 @@ export default function TransactionTable({
 
               if (isEditing && editForm) {
                 return (
-                  <tr key={transaction.id} className="bg-blue-50 dark:bg-blue-900/20">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <input
-                        type="date"
-                        value={formatDateForInput(editForm.date)}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, date: new Date(e.target.value) })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 rounded"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={editForm.type}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, type: e.target.value as 'lend' | 'borrow' })
-                        }
-                        className="px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded"
-                      >
-                        <option value="lend">Lend</option>
-                        <option value="borrow">Borrow</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editForm.amount}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, amount: parseFloat(e.target.value) })
-                        }
-                        className="w-full px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={editForm.interestRate}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, interestRate: parseFloat(e.target.value) })
-                        }
-                        className="w-20 px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <input
-                        type="text"
-                        value={editForm.notes}
-                        onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                        className="w-full px-2 py-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <input
-                        type="date"
-                        value={editForm.expectedRepaymentDate ? formatDateForInput(editForm.expectedRepaymentDate) : ''}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            expectedRepaymentDate: e.target.value ? new Date(e.target.value + 'T00:00:00') : null,
-                          })
-                        }
-                        className="w-full px-2 py-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(breakdown.currentValue, currency)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={editForm.completed}
-                          onChange={(e) => setEditForm({ ...editForm, completed: e.target.checked })}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-xs text-gray-500 dark:text-slate-400">Completed</span>
-                      </label>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={saveEdit}
-                        className="text-green-600 hover:text-green-800 dark:hover:text-green-400 mr-3"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
-                      >
-                        Cancel
-                      </button>
-                    </td>
-                  </tr>
+                  <Fragment key={transaction.id}>
+                    {/* Normal read-only row dimmed while editing */}
+                    <tr className="opacity-40 pointer-events-none select-none">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatDateForDisplay(transaction.date)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded ${transaction.type === 'lend' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                          {transaction.type === 'lend' ? 'Lend' : 'Borrow'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatCurrency(transaction.amount, currency)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{transaction.interestRate}%</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">{transaction.notes || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
+                        {transaction.expectedRepaymentDate ? formatDateForDisplay(transaction.expectedRepaymentDate) : <span className="text-gray-300 dark:text-slate-600">—</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(breakdown.currentValue, currency)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">—</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">—</td>
+                    </tr>
+
+                    {/* Spacious edit panel */}
+                    <tr>
+                      <td colSpan={9} className="px-6 py-5 bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Date</label>
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              defaultValue={formatDateForDisplay(editForm.date)}
+                              onBlur={(e) => {
+                                const parsed = parseDDMMYYYY(e.target.value);
+                                if (parsed) setEditForm({ ...editForm, date: parsed });
+                              }}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Type</label>
+                            <select
+                              value={editForm.type}
+                              onChange={(e) => setEditForm({ ...editForm, type: e.target.value as 'lend' | 'borrow' })}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="lend">Lend</option>
+                              <option value="borrow">Borrow</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Amount</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editForm.amount}
+                              onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) })}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Rate (% / month)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editForm.interestRate}
+                              onChange={(e) => setEditForm({ ...editForm, interestRate: parseFloat(e.target.value) })}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Expected Repayment</label>
+                            <input
+                              type="text"
+                              placeholder="DD/MM/YYYY"
+                              defaultValue={editForm.expectedRepaymentDate ? formatDateForDisplay(editForm.expectedRepaymentDate) : ''}
+                              onBlur={(e) => {
+                                const v = e.target.value.trim();
+                                if (!v) {
+                                  setEditForm({ ...editForm, expectedRepaymentDate: null });
+                                } else {
+                                  const parsed = parseDDMMYYYY(v);
+                                  if (parsed) setEditForm({ ...editForm, expectedRepaymentDate: parsed });
+                                }
+                              }}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="sm:col-span-2 lg:col-span-2">
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Notes</label>
+                            <input
+                              type="text"
+                              value={editForm.notes}
+                              onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                              className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex items-end pb-1">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editForm.completed}
+                                onChange={(e) => setEditForm({ ...editForm, completed: e.target.checked })}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700 dark:text-slate-300">Mark as completed</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 pt-2 border-t border-blue-200 dark:border-blue-700">
+                          <button
+                            onClick={saveEdit}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                          >
+                            Save changes
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="px-4 py-2 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 text-sm font-medium rounded-lg border border-gray-300 dark:border-slate-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </Fragment>
                 );
               }
 
@@ -275,7 +305,7 @@ export default function TransactionTable({
                         Edit
                       </button>
                       <button
-                        onClick={() => onDeleteTransaction(transaction.id)}
+                        onClick={() => setDeleteTarget(transaction)}
                         className="text-red-600 hover:text-red-800"
                       >
                         Delete
@@ -420,6 +450,48 @@ export default function TransactionTable({
           </tbody>
         </table>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Delete transaction?</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <span className="font-medium text-gray-700 dark:text-slate-200">
+                    {deleteTarget.type === 'lend' ? 'Lend' : 'Borrow'} &mdash; {formatCurrency(deleteTarget.amount, currency)} on {formatDateForDisplay(deleteTarget.date)}
+                  </span>
+                  {deleteTarget.notes ? <><br /><span className="italic">{deleteTarget.notes}</span></> : null}
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-2">This cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteTransaction(deleteTarget.id);
+                  setDeleteTarget(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

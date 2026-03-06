@@ -4,10 +4,9 @@ import { clientsApi, type ClientRead } from "../api/clients";
 import { transactionsApi, type TransactionRead } from "../api/transactions";
 import { calculateTotalBalance } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
-import { formatDateForInput } from "../utils/dateUtils";
+import DateInput from "../components/DateInput";
 import { exportSummaryToPDF, exportSummaryToExcel, type SummaryExportRow } from "../utils/export";
-import { useAuth } from "../contexts/AuthContext";
-import ThemeToggle from "../components/ThemeToggle";
+import Navbar from "../components/Navbar";
 import type { Transaction } from "../types";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -38,7 +37,6 @@ interface ClientSummary {
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function SummaryPage() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [asOfDate, setAsOfDate] = useState<Date>(new Date());
@@ -170,42 +168,7 @@ export default function SummaryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
-      {/* Nav */}
-      <header className="bg-white dark:bg-slate-900/80 backdrop-blur border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link
-              to="/"
-              className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white text-sm transition-colors"
-            >
-              ← Dashboard
-            </Link>
-            <nav className="flex items-center gap-4">
-              <Link
-                to="/"
-                className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                Clients
-              </Link>
-              <span className="text-sm font-semibold text-blue-600 border-b-2 border-blue-600 pb-0.5">
-                Portfolio Summary
-              </span>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-gray-500 dark:text-slate-400 text-sm hidden sm:block">
-              {user?.email}
-            </span>
-            <ThemeToggle />
-            <button
-              onClick={logout}
-              className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 transition-colors"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar active="summary" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Title + date picker + export buttons */}
@@ -217,18 +180,24 @@ export default function SummaryPage() {
             <p className="text-gray-500 dark:text-slate-400 mt-1 text-sm">
               Net financial position across all clients
             </p>
+            <button
+              onClick={() => navigate("/", { state: { openAddClient: true } })}
+              className="inline-flex items-center gap-1.5 mt-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Client
+            </button>
           </div>
           <div className="flex items-end gap-3 shrink-0">
             <div>
               <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
                 As of Date
               </label>
-              <input
-                type="date"
-                value={formatDateForInput(asOfDate)}
-                onChange={(e) =>
-                  setAsOfDate(new Date(e.target.value + "T00:00:00"))
-                }
+              <DateInput
+                value={asOfDate}
+                onChange={(d) => setAsOfDate(d)}
                 className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

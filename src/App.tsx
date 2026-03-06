@@ -1,18 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Transaction, Client } from "./types";
-import { formatDateForInput } from "./utils/dateUtils";
+import DateInput from "./components/DateInput";
 import TransactionForm from "./components/TransactionForm";
 import TransactionTable from "./components/TransactionTable";
 import Summary from "./components/Summary";
 import ThemeToggle from "./components/ThemeToggle";
-import PrivacyPolicy from "./components/PrivacyPolicy";
-import {
-  IntroSection,
-  HowToUseSection,
-  FAQSection,
-  Footer,
-} from "./components/ContentSections";
 import { exportToPDF, exportToCSV, importFromCSV } from "./utils/export";
 
 const GUEST_CLIENT_KEY = "guest_client";
@@ -282,10 +275,9 @@ function App() {
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 As of Date
               </label>
-              <input
-                type="date"
-                value={formatDateForInput(asOfDate)}
-                onChange={(e) => setAsOfDate(new Date(e.target.value))}
+              <DateInput
+                value={asOfDate}
+                onChange={(d) => setAsOfDate(d)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -429,21 +421,6 @@ function App() {
             </div>
           </div>
         )}
-        {/* How to Use Section */}
-        <HowToUseSection />
-        {/* Introduction Section */}
-        <IntroSection />
-
-
-
-        {/* FAQ Section */}
-        <FAQSection />
-
-        {/* Privacy Policy */}
-        <PrivacyPolicy />
-
-        {/* Footer */}
-        <Footer />
       </div>
     </div>
   );

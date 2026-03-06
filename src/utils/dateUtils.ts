@@ -98,3 +98,16 @@ export function parseDateFromInput(dateString: string): Date {
   const [year, month, day] = dateString.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
+
+/**
+ * Parse a DD/MM/YYYY string into a Date. Returns null if invalid.
+ */
+export function parseDDMMYYYY(value: string): Date | null {
+  const parts = value.trim().split('/');
+  if (parts.length !== 3) return null;
+  const [day, month, year] = parts.map(Number);
+  if (!day || !month || !year || year < 1900 || year > 2100) return null;
+  const d = new Date(year, month - 1, day);
+  if (d.getDate() !== day || d.getMonth() !== month - 1 || d.getFullYear() !== year) return null;
+  return d;
+}

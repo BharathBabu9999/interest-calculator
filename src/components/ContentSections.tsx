@@ -1,9 +1,10 @@
 import Accordion from './Accordion';
 
-export function IntroSection() {
+export function IntroSection({ defaultOpen = false }: { defaultOpen?: boolean }) {
   return (
     <Accordion 
       title="How Interest Is Calculated: A Three-Part System"
+      defaultOpen={defaultOpen}
     >
       <p className="text-gray-700 dark:text-slate-300 mb-4">
         Our calculator uses a sophisticated three-part calculation method to ensure accuracy and fairness:
@@ -68,9 +69,10 @@ export function IntroSection() {
   );
 }
 
-export function HowToUseSection() {
+export function HowToUseSection({ defaultOpen = false }: { defaultOpen?: boolean }) {
   return (
-    <Accordion title="How to Use This Calculator" className="mt-8">
+    <div id="how-to-use">
+    <Accordion title="How to Use This Calculator" className="mt-8" defaultOpen={defaultOpen}>
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-semibold mb-2 text-blue-600">1. Add Transactions</h3>
@@ -102,12 +104,13 @@ export function HowToUseSection() {
         </div>
       </div>
     </Accordion>
+    </div>
   );
 }
 
-export function FAQSection() {
+export function FAQSection({ defaultOpen = false }: { defaultOpen?: boolean }) {
   return (
-    <Accordion title="Frequently Asked Questions">
+    <Accordion title="Frequently Asked Questions" defaultOpen={defaultOpen}>
       <div className="space-y-4">
         <div>
           <h3 className="font-semibold text-lg mb-2 dark:text-white">How does anniversary-based compounding work?</h3>

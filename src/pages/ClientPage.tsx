@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { Transaction, Client } from "../types";
 import { formatDateForInput } from "../utils/dateUtils";
+import DateInput from "../components/DateInput";
 import TransactionForm from "../components/TransactionForm";
 import TransactionTable from "../components/TransactionTable";
 import Summary from "../components/Summary";
@@ -16,8 +17,8 @@ import {
 import { exportToPDF, exportToCSV, importFromCSV } from "../utils/export";
 import { clientsApi } from "../api/clients";
 import { transactionsApi, type TransactionRead } from "../api/transactions";
-import { useAuth } from "../contexts/AuthContext";
-import ThemeToggle from "../components/ThemeToggle";
+import Navbar from "../components/Navbar";
+import Toast from "../components/Toast";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,6 @@ function apiToLocal(tx: TransactionRead): Transaction {
 export default function ClientPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
   const [client, setClient] = useState<Client | null>(null);
   const [loadingClient, setLoadingClient] = useState(true);
@@ -52,6 +52,7 @@ export default function ClientPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [sortOrder, setSortOrder] = useState<"chronological" | "entry">("chronological");
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info"; details?: { label: string; value: string }[] } | null>(null);
 
   // Notes editing
   const [notesEditing, setNotesEditing] = useState(false);
@@ -116,7 +117,19 @@ export default function ClientPage() {
           ? formatDateForInput(transaction.expectedRepaymentDate)
           : undefined,
       });
-      setTransactions((prev) => [...prev, apiToLocal(created)]);
+      const local = apiToLocal(created);
+      setTransactions((prev) => [...prev, local]);
+      setToast({
+        message: "Transaction added",
+        type: "success",
+        details: [
+          { label: "Type",   value: local.type === "lend" ? "Lend" : "Borrow" },
+          { label: "Amount", value: new Intl.NumberFormat("en-IN", { style: "currency", currency: client?.currency ?? "INR", maximumFractionDigits: 0 }).format(local.amount) },
+          { label: "Date",   value: local.date.toLocaleDateString("en-IN") },
+          { label: "Rate",   value: `${local.interestRate}% / month` },
+          ...(local.notes ? [{ label: "Notes", value: local.notes }] : []),
+        ],
+      });
     } catch (err) {
       alert(`Failed to add transaction: ${err instanceof Error ? err.message : err}`);
     }
@@ -260,44 +273,21 @@ export default function ClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
-      {/* Top nav */}
-      <header className="bg-white dark:bg-slate-900/80 backdrop-blur border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white text-sm flex items-center gap-1 transition-colors"
-            >
-              ← Dashboard
-            </Link>
-            {client && (
-              <>
-                <span className="text-gray-300 dark:text-slate-600">/</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{client.name}</span>
-                <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 rounded-full px-2 py-0.5">
-                  {client.currency}
-                </span>
-                <span className={`text-xs rounded-full px-2 py-0.5 font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300`}>
-                  {client.clientType === "financial_institution" ? "Financial Institution" : "Individual"}
-                </span>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/summary" className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors hidden sm:block">
-              Portfolio Summary
-            </Link>
-            <ThemeToggle />
-            <span className="text-gray-500 dark:text-slate-400 text-sm hidden sm:block">{user?.email}</span>
-            <button
-              onClick={logout}
-              className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5 transition-colors"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar
+        breadcrumb={
+          client ? (
+            <>
+              <span className="font-semibold text-gray-900 dark:text-white truncate max-w-40">{client.name}</span>
+              <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 rounded-full px-2 py-0.5 shrink-0">
+                {client.currency}
+              </span>
+              <span className="text-xs rounded-full px-2 py-0.5 font-medium bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300 shrink-0">
+                {client.clientType === "financial_institution" ? "Financial Institution" : "Individual"}
+              </span>
+            </>
+          ) : undefined
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page heading */}
@@ -311,10 +301,9 @@ export default function ClientPage() {
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-6 flex flex-wrap items-center gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">As of Date</label>
-            <input
-              type="date"
-              value={formatDateForInput(asOfDate)}
-              onChange={(e) => setAsOfDate(new Date(e.target.value + "T00:00:00"))}
+            <DateInput
+              value={asOfDate}
+              onChange={(d) => setAsOfDate(d)}
               className="px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -556,6 +545,15 @@ export default function ClientPage() {
         <PrivacyPolicy />
         <Footer />
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          details={toast.details}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

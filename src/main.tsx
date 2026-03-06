@@ -12,6 +12,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientPage from './pages/ClientPage'
 import SummaryPage from './pages/SummaryPage'
+import AboutPage from './pages/AboutPage'
 import App from './App'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
@@ -49,6 +50,14 @@ createRoot(document.getElementById('root')!).render(
             element={
               <PrivateRoute>
                 <SummaryPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <PrivateRoute>
+                <AboutPage />
               </PrivateRoute>
             }
           />

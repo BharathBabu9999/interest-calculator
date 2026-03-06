@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { clientsApi, type ClientRead, type ClientCreate } from "../api/clients";
 import { transactionsApi } from "../api/transactions";
 import { calculateTotalBalance } from "../utils/calculator";
 import { formatCurrency } from "../utils/currency";
-import { useAuth } from "../contexts/AuthContext";
-import ThemeToggle from "../components/ThemeToggle";
+import Navbar from "../components/Navbar";
+import { Footer } from "../components/ContentSections";
 import type { ClientType } from "../types";
 
 const CURRENCIES = ["INR", "USD", "EUR", "GBP", "JPY", "AUD", "CAD"];
@@ -29,8 +29,8 @@ interface ClientFormState {
 const empty: ClientFormState = { name: "", client_type: "individual", currency: "INR", notes: "", phone: "", email: "", address: "", company: "" };
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [clients, setClients] = useState<ClientRead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +110,16 @@ export default function DashboardPage() {
     setModalOpen(true);
   };
 
+  // Auto-open add modal when navigated from another page with state
+  useEffect(() => {
+    if ((location.state as { openAddClient?: boolean } | null)?.openAddClient) {
+      openCreate();
+      // Clear the state so back-navigation doesn't re-open
+      window.history.replaceState({}, "");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openEdit = (client: ClientRead) => {
     setEditingClient(client);
     setForm({ name: client.name, client_type: client.client_type, currency: client.currency, notes: client.notes ?? "", phone: client.phone ?? "", email: client.email ?? "", address: client.address ?? "", company: client.company ?? "" });
@@ -171,31 +181,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 text-gray-900 dark:text-white transition-colors">
-      {/* Nav */}
-      <header className="border-b border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold tracking-tight">Interest Calculator</h1>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/summary"
-              className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5"
-            >
-              Portfolio Summary
-            </Link>
-            <ThemeToggle />
-            <span className="text-gray-500 dark:text-slate-400 text-sm hidden sm:block">{user?.email}</span>
-            <button
-              onClick={logout}
-              className="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-1.5"
-            >
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white transition-colors">
+      <Navbar active="clients" />
 
-      <main className="max-w-5xl mx-auto px-4 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Title row */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -206,9 +195,12 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={openCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors"
+            className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-4 py-2 text-sm transition-colors shadow-sm"
           >
-            + Add Client
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Client
           </button>
         </div>
 
@@ -263,17 +255,37 @@ export default function DashboardPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="text-gray-400 dark:text-slate-400 text-center py-20">Loading clients…</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-2/3 mb-2" />
+                <div className="h-3 bg-gray-100 dark:bg-slate-700/60 rounded w-1/3 mb-4" />
+                <div className="h-3 bg-gray-100 dark:bg-slate-700/60 rounded w-full mb-1.5" />
+                <div className="h-3 bg-gray-100 dark:bg-slate-700/60 rounded w-4/5" />
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Empty */}
         {!loading && clients.length === 0 && !error && (
-          <div className="text-center py-20">
-            <p className="text-gray-500 dark:text-slate-400 mb-4">No clients yet.</p>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-5">
+              <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-white mb-1">No clients yet</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-6 max-w-xs">
+              Add your first client to start tracking transactions and calculating interest.
+            </p>
             <button
               onClick={openCreate}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-5 py-2.5 text-sm transition-colors"
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-5 py-2.5 text-sm transition-colors shadow-sm"
             >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
               Add your first client
             </button>
           </div>
@@ -307,7 +319,7 @@ export default function DashboardPage() {
                 {filtered.map((client) => (
               <div
                 key={client.id}
-                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col gap-3 hover:border-blue-500 transition-colors group cursor-pointer"
+                className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 flex flex-col gap-3 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all group cursor-pointer"
                 onClick={() => navigate(`/clients/${client.id}`)}
               >
                 <div className="flex items-start justify-between">
@@ -394,12 +406,16 @@ export default function DashboardPage() {
         })()}
       </main>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <Footer />
+      </div>
+
       {/* Delete Confirmation Modal */}
       {deleteConfirmClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
                 <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>

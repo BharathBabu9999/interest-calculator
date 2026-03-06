@@ -36,14 +36,26 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, or net balance
 - **Per-currency grouping** — grand totals grouped by currency (respects active filters)
 - **Click-through** — click any client row to jump straight to their transaction page
+- **Add Client shortcut** — "+ Add Client" button on the Summary page navigates to the Dashboard and automatically opens the Add Client modal
 
 ### Guest Mode
 - **Try without registering** — visit `/guest` to use the full calculator with localStorage-only persistence (no account needed)
 - **Amber banner** — persistent reminder with links to sign in or create an account
 - **No data loss on navigation** — guest client and transactions are saved to `localStorage` automatically
 
+### Navigation
+- **Shared navbar** — a single consistent top navigation bar appears on every authenticated page (Dashboard, Client, Portfolio Summary, About); shows active tab with a blue underline indicator
+- **Tabs** — **Clients** (Dashboard), **Portfolio Summary**, and **About** tabs in the navbar; breadcrumb slot on the Client page shows client name, currency, and type badges
+
+### About Page
+- **Dedicated documentation hub** at `/about` — How to Use, Introduction, FAQ, and Privacy Policy sections, all expanded by default
+- Accessible from the **About** tab in the navbar on every page
+
 ### UI & Theme
 - **Dark / light mode** — toggle at the top of every page; preference saved to localStorage
+- **Rich toast notifications** — after adding a transaction a card notification appears with a coloured top strip, icon, and a detail grid showing Type, Amount, Date, Rate, and Notes
+- **Skeleton loading** — the Dashboard shows animated placeholder cards while client data loads
+- **Improved empty state** — when no clients exist, the Dashboard shows a centred icon, heading, and a direct "+ Add Client" call-to-action button
 
 ### Interest Calculation Engine
 - **Anniversary-based annual compounding** — interest compounds on each 12-month anniversary of the transaction, not at calendar year-end
@@ -184,10 +196,11 @@ The app runs at **http://localhost:5173**.
 4. Add **Lend** or **Borrow** transactions; set an optional **Expected Repayment Date** in DD/MM/YYYY format; interest is calculated live
 5. Click any row to expand the step-by-step compounding breakdown
 6. Use the **Status** column to mark a transaction as completed — it will be excluded from the net balance
-7. Click **"Portfolio Summary"** in the nav to see totals across all clients
-8. On the client page, add notes or upload files (images, PDFs, documents) using the Files card
-9. Use the **sun/moon icon** in the top-right to toggle dark / light mode
-10. To test the forgot-password flow: click **"Forgot password?"** on the login page → enter your email → the reset link is sent by email (or printed to the uvicorn terminal if Gmail SMTP is not configured)
+7. Click **"Portfolio Summary"** in the nav to see totals across all clients; use **"+ Add Client"** there to go straight to the Add Client modal
+8. Click **"About"** in the nav to open the documentation hub (How to Use, FAQ, Privacy Policy — all expanded)
+9. On the client page, add notes or upload files (images, PDFs, documents) using the Files card
+10. Use the **sun/moon icon** in the top-right to toggle dark / light mode
+11. To test the forgot-password flow: click **"Forgot password?"** on the login page → enter your email → the reset link is sent by email (or printed to the uvicorn terminal if Gmail SMTP is not configured)
 
 ---
 
@@ -227,17 +240,20 @@ interest-calc/
     │   ├── RegisterPage.tsx        # Email/password + Google Sign-In
     │   ├── ForgotPasswordPage.tsx  # Email form → triggers reset email
     │   ├── ResetPasswordPage.tsx   # New-password form (reads ?token= from URL)
-    │   ├── DashboardPage.tsx       # Client list with delete-confirmation modal
-    │   ├── ClientPage.tsx          # Transactions view for a single client
-    │   └── SummaryPage.tsx         # Portfolio summary across all clients
+    │   ├── DashboardPage.tsx       # Client list, skeleton loading, empty-state CTA, delete modal
+    │   ├── ClientPage.tsx          # Transactions view for a single client + docs sections
+    │   ├── SummaryPage.tsx         # Portfolio summary across all clients + Add Client button
+    │   └── AboutPage.tsx           # Documentation hub (How to Use, FAQ, Privacy Policy — open)
     ├── components/
+    │   ├── Navbar.tsx              # Shared top nav (Clients / Portfolio Summary / About tabs)
+    │   ├── Toast.tsx               # Rich card notification with coloured strip + detail grid
     │   ├── TransactionForm.tsx
     │   ├── TransactionTable.tsx
     │   ├── Summary.tsx
     │   ├── ClientFiles.tsx         # File cards with thumbnails, drag-and-drop upload
     │   ├── ThemeToggle.tsx         # Sun/moon icon button
-    │   ├── Accordion.tsx
-    │   ├── ContentSections.tsx
+    │   ├── Accordion.tsx           # Collapsible section (supports defaultOpen prop)
+    │   ├── ContentSections.tsx     # HowToUseSection, IntroSection, FAQSection (defaultOpen prop)
     │   └── PrivacyPolicy.tsx
     ├── utils/
     │   ├── calculator.ts           # Interest calculation engine
@@ -260,8 +276,9 @@ interest-calc/
 | `/reset-password?token=…` | Set a new password via emailed link | No |
 | `/guest` | Guest mode — full calculator with localStorage persistence | No |
 | `/` | Dashboard — client list | Yes |
-| `/clients/:id` | Transactions for a client | Yes |
+| `/clients/:id` | Transactions for a single client | Yes |
 | `/summary` | Portfolio summary across all clients | Yes |
+| `/about` | Documentation hub (How to Use, FAQ, Privacy Policy) | Yes |
 
 ---
 
