@@ -21,13 +21,11 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Full CRUD** — create, edit, and delete clients from the dashboard (delete requires confirmation in a warning modal)
 
 ### Transaction Tracking (per client)
-- **Dual transaction types** — **Lend** (money given out) and **Borrow** (money received)
-- **Variable interest rates** — each transaction has its own monthly rate
-- **Expected repayment date** — optionally record when a transaction is expected to be settled; displayed in the table and editable inline
-- **Completed flag** — mark a transaction as completed to exclude it from net balance calculations (shown dimmed with strikethrough)
-- **CSV import/export** — bulk import transactions from spreadsheets; export to CSV or PDF
-- **Inline editing** — edit any transaction directly in the table
-- **Bulk rate update** — change the interest rate for all transactions at once
+### Transaction Tracking (per client)
+- **Add Transaction overlay** — when adding a transaction, an overlay appears with a spinner and message until the operation completes (success or error)
+- **Form loading state** — the Add Transaction form and button are disabled while the transaction is being added
+- **Net Outstanding Balance color** — on the client page, the net outstanding balance is shown in green if positive/zero, red if negative
+- **Improved sort arrows** — all sortable tables now use consistent up/down SVG arrows with blue for active and gray for inactive, matching the summary page style
 
 ### Portfolio Summary
 - **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view

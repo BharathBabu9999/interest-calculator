@@ -102,10 +102,15 @@ export default function ClientPage() {
     }
   };
 
+
+  // Overlay state for Add Transaction
+  const [addingTransaction, setAddingTransaction] = useState(false);
+
   // ── mutation handlers ────────────────────────────────────────────────────
 
   const handleAddTransaction = async (transaction: Transaction) => {
     if (!clientId) return;
+    setAddingTransaction(true);
     try {
       const created = await transactionsApi.create(clientId, {
         date: formatDateForInput(transaction.date),
@@ -132,6 +137,8 @@ export default function ClientPage() {
       });
     } catch (err) {
       alert(`Failed to add transaction: ${err instanceof Error ? err.message : err}`);
+    } finally {
+      setAddingTransaction(false);
     }
   };
 
@@ -315,7 +322,20 @@ export default function ClientPage() {
         )}
 
         {/* Transaction Form */}
-        <TransactionForm onAddTransaction={handleAddTransaction} />
+        <TransactionForm onAddTransaction={handleAddTransaction} loading={addingTransaction} />
+
+        {/* Overlay for adding transaction */}
+        {addingTransaction && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg px-8 py-6 flex flex-col items-center">
+              <svg className="animate-spin w-8 h-8 text-blue-600 mb-3" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+              <span className="text-lg font-medium text-gray-700 dark:text-slate-200">Adding the transaction...</span>
+            </div>
+          </div>
+        )}
 
         {/* Controls bar */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 mb-6">
@@ -374,7 +394,6 @@ export default function ClientPage() {
           <TransactionTable
             transactions={transactions}
             asOfDate={asOfDate}
-            sortOrder={sortOrder}
             currency={client.currency}
             onDeleteTransaction={handleDeleteTransaction}
             onUpdateTransaction={handleUpdateTransaction}

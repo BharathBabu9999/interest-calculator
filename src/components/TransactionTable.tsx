@@ -7,31 +7,76 @@ import { formatDateForDisplay, parseDDMMYYYY } from '../utils/dateUtils';
 interface TransactionTableProps {
   transactions: Transaction[];
   asOfDate: Date;
-  sortOrder: 'chronological' | 'entry';
   currency: string;
   onDeleteTransaction: (id: string) => void;
   onUpdateTransaction: (transaction: Transaction) => void;
   onToggleCompleted: (id: string, completed: boolean) => void;
 }
 
-export default function TransactionTable({
-  transactions,
-  asOfDate,
-  sortOrder,
-  currency,
-  onDeleteTransaction,
-  onUpdateTransaction,
-  onToggleCompleted,
-}: TransactionTableProps) {
+type SortColumn =
+  | 'date'
+  | 'type'
+  | 'amount'
+  | 'rate'
+  | 'notes'
+  | 'repaymentDate'
+  | 'currentValue'
+  | 'status';
+
+  type SortDirection = 'asc' | 'desc';
+
+  export default function TransactionTable({
+    transactions,
+    asOfDate,
+    currency,
+    onDeleteTransaction,
+    onUpdateTransaction,
+    onToggleCompleted,
+  }: TransactionTableProps) {
+  const [sortColumn, setSortColumn] = useState<SortColumn>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Transaction | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
 
-  const sortedTransactions =
-    sortOrder === 'chronological'
-      ? [...transactions].sort((a, b) => a.date.getTime() - b.date.getTime())
-      : transactions;
+  // Compute current value for each transaction for sorting
+  const txWithCurrentValue = transactions.map((tx) => ({
+    ...tx,
+    _currentValue: calculateCurrentValue(tx, asOfDate).currentValue,
+  }));
+
+  function compare(a: Transaction & { _currentValue: number }, b: Transaction & { _currentValue: number }, col: SortColumn): number {
+    switch (col) {
+      case 'date':
+        return a.date.getTime() - b.date.getTime();
+      case 'type':
+        return a.type.localeCompare(b.type);
+      case 'amount':
+        return a.amount - b.amount;
+      case 'rate':
+        return a.interestRate - b.interestRate;
+      case 'notes':
+        return (a.notes || '').localeCompare(b.notes || '');
+      case 'repaymentDate':
+        if (!a.expectedRepaymentDate && !b.expectedRepaymentDate) return 0;
+        if (!a.expectedRepaymentDate) return 1;
+        if (!b.expectedRepaymentDate) return -1;
+        return a.expectedRepaymentDate.getTime() - b.expectedRepaymentDate.getTime();
+      case 'currentValue':
+        return a._currentValue - b._currentValue;
+      case 'status':
+        // Active < Completed
+        return (a.completed === b.completed) ? 0 : a.completed ? 1 : -1;
+      default:
+        return 0;
+    }
+  }
+
+  const sortedTransactions = [...txWithCurrentValue].sort((a, b) => {
+    const cmp = compare(a, b, sortColumn);
+    return sortDirection === 'asc' ? cmp : -cmp;
+  });
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => 
@@ -67,35 +112,55 @@ export default function TransactionTable({
     );
   }
 
+  function handleSort(col: SortColumn) {
+    if (sortColumn === col) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDirection('asc');
+    }
+  }
+
+  function sortIcon(col: SortColumn) {
+    const isAsc = sortColumn === col && sortDirection === 'asc';
+    const isDesc = sortColumn === col && sortDirection === 'desc';
+    return (
+      <span className="inline-flex flex-col leading-none ml-1">
+        <svg className={`w-2.5 h-2.5 -mb-0.5 ${isAsc ? 'text-blue-500' : 'text-gray-300 dark:text-slate-600'}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+        <svg className={`w-2.5 h-2.5 ${isDesc ? 'text-blue-500' : 'text-gray-300 dark:text-slate-600'}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+      </span>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
           <thead className="bg-gray-50 dark:bg-slate-700/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Date
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('date')}>
+                Date {sortIcon('date')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Type
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('type')}>
+                Type {sortIcon('type')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Amount
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('amount')}>
+                Amount {sortIcon('amount')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Rate
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('rate')}>
+                Rate {sortIcon('rate')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Notes
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('notes')}>
+                Notes {sortIcon('notes')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Repayment Date
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('repaymentDate')}>
+                Repayment Date {sortIcon('repaymentDate')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Current Value
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('currentValue')}>
+                Current Value {sortIcon('currentValue')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                Status
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('status')}>
+                Status {sortIcon('status')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 Actions
@@ -321,14 +386,14 @@ export default function TransactionTable({
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
                               <p className="text-xs text-gray-500 dark:text-slate-400">Duration</p>
-                              <p className="text-sm font-medium">
+                              <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
                                 {breakdown.duration.years}yrs {breakdown.duration.months}months{' '}
                                 {breakdown.duration.days}days
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-slate-400">Original Amount</p>
-                              <p className="text-sm font-medium">
+                              <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
                                 {formatCurrency(breakdown.originalAmount, currency)}
                               </p>
                             </div>

@@ -30,7 +30,7 @@ export default function Summary({ transactions, asOfDate, currency }: SummaryPro
 
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <h3 className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Net Outstanding Balance</h3>
-        <p className={`text-3xl font-bold ${netBalance >= 0 ? 'text-blue-600' : 'text-gray-600'}`}>
+        <p className={`text-3xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
           {formatCurrency(Math.round(netBalance), currency)}
         </p>
       </div>

@@ -51,9 +51,10 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 interface TransactionFormProps {
   onAddTransaction: (transaction: Transaction) => void;
+  loading?: boolean;
 }
 
-export default function TransactionForm({ onAddTransaction }: TransactionFormProps) {
+export default function TransactionForm({ onAddTransaction, loading }: TransactionFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   
   const {
@@ -105,6 +106,8 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-slate-700/50 transition"
+        disabled={!!loading}
+        aria-disabled={!!loading}
       >
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add Transaction</h2>
         <svg
@@ -119,7 +122,7 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
       
       {isOpen && (
         <div className="px-6 pb-6 pt-2 border-t dark:border-slate-700">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit)} aria-disabled={!!loading}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Date (DD/MM/YYYY)</label>
@@ -206,8 +209,9 @@ export default function TransactionForm({ onAddTransaction }: TransactionFormPro
         <button
           type="submit"
           className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          disabled={!!loading}
         >
-          Add Transaction
+          {loading ? 'Adding...' : 'Add Transaction'}
         </button>
       </form>
         </div>

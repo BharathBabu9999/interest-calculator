@@ -365,7 +365,6 @@ function App() {
         <TransactionTable
           transactions={transactions}
           asOfDate={asOfDate}
-          sortOrder={sortOrder}
           currency={client.currency}
           onDeleteTransaction={handleDeleteTransaction}
           onUpdateTransaction={handleUpdateTransaction}
