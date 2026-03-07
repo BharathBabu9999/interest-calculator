@@ -36,7 +36,8 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, net balance, or highest rate
 - **Highest Rate column** — shows the maximum interest rate across all transactions for each client
 - **Per-currency grouping** — grand totals grouped by currency; broken down by client type when both types are present
-- **Daily Value toggle** — same blue daily interest card available on the Summary page, aggregated across all included clients per currency
+- **Daily Value toggle** — when enabled, shows an **Approx. Daily Interest** line below the Net Balance in each summary card (Financial Institution, Individual, and Grand Total); computed per type using the +30-day method
+- **Comma-formatted numbers** — all currency values use locale-aware formatting with commas (Indian grouping for INR, e.g. `₹2,56,87,637.25`; standard for others, e.g. `$1,234,567.89`)
 - **Click-through** — click any client row to jump straight to their transaction page
 - **Add Client shortcut** — "+ Add Client" button navigates to the Dashboard and automatically opens the Add Client modal
 - **Show Transactions toggle** — expand each client row to reveal a per-transaction mini-table (Date, Type, Amount, Rate, Balance, Reminder Date, Notes)
