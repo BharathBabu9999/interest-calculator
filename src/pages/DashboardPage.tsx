@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Title row */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Clients</h2>
             <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">

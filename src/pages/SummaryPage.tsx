@@ -374,23 +374,23 @@ export default function SummaryPage() {
                     <span className="text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">{currency}</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                      <span>Total Lent</span>
+                    <div className="flex justify-between gap-2 text-sm text-gray-500 dark:text-slate-400">
+                      <span className="shrink-0">Total Lent</span>
                       <span className="text-right">
-                        <span className="font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.lent, currency)}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.lent, currency)}</span>
                         <span className="text-xs text-gray-400 dark:text-slate-500">({formatCurrency(t.principalLent, currency)} principal)</span>
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm text-gray-500 dark:text-slate-400">
-                      <span>Total Borrowed</span>
+                    <div className="flex justify-between gap-2 text-sm text-gray-500 dark:text-slate-400">
+                      <span className="shrink-0">Total Borrowed</span>
                       <span className="text-right">
-                        <span className="font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.borrowed, currency)}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-800 dark:text-slate-200 block">{formatCurrency(t.borrowed, currency)}</span>
                         <span className="text-xs text-gray-400 dark:text-slate-500">({formatCurrency(t.principalBorrowed, currency)} principal)</span>
                       </span>
                     </div>
-                    <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between">
-                      <span className="font-semibold text-gray-700 dark:text-slate-300">Net Balance</span>
-                      <span className={`${isGrand ? "text-xl" : "text-lg"} font-bold ${t.net >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <div className="border-t border-gray-100 dark:border-slate-700 mt-2 pt-2 flex justify-between gap-2">
+                      <span className="font-semibold text-gray-700 dark:text-slate-300 shrink-0">Net Balance</span>
+                      <span className={`${isGrand ? "text-base sm:text-xl" : "text-sm sm:text-lg"} font-bold text-right ${t.net >= 0 ? "text-green-600" : "text-red-600"}`}>
                         {formatCurrency(t.net, currency)}
                       </span>
                     </div>
@@ -456,26 +456,22 @@ export default function SummaryPage() {
         {/* Per-client table */}
         {!loading && summaries.length > 0 && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
             {/* Table header */}
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-              {([
-                ["name", "Client", "col-span-2 text-left"],
-              ] as const).map(([col, label, cls]) => (
-                <button
-                  key={col}
-                  onClick={() => handleSort(col)}
-                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start`}
-                >
-                  {label}
-                  <span className="inline-flex flex-col leading-none">
-                    <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === col && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
-                    <svg className={`w-2.5 h-2.5 ${sortCol === col && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
-                  </span>
-                </button>
-              ))}
+            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-700 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400 min-w-[700px]">
+              <button
+                onClick={() => handleSort("name")}
+                className="col-span-2 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start"
+              >
+                Client
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "name" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "name" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
               <button
                 onClick={() => handleSort("clientType")}
-                className="col-span-1 text-left flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start"
+                className="col-span-1 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-start"
               >
                 Type
                 <span className="inline-flex flex-col leading-none">
@@ -483,25 +479,56 @@ export default function SummaryPage() {
                   <svg className={`w-2.5 h-2.5 ${sortCol === "clientType" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
                 </span>
               </button>
-              {([
-                ["txCount", "Txns", "col-span-1 text-center"],
-                ["totalLent", "Total Lent", "col-span-2 text-right"],
-                ["totalBorrowed", "Total Borrowed", "col-span-2 text-right"],
-                ["highestRate", "Highest Rate", "col-span-1 text-right"],
-                ["netBalance", "Net Balance", "col-span-2 text-right"],
-              ] as const).map(([col, label, cls]) => (
-                <button
-                  key={col}
-                  onClick={() => handleSort(col)}
-                  className={`${cls} flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end`}
-                >
-                  {label}
-                  <span className="inline-flex flex-col leading-none">
-                    <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === col && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
-                    <svg className={`w-2.5 h-2.5 ${sortCol === col && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
-                  </span>
-                </button>
-              ))}
+              <button
+                onClick={() => handleSort("txCount")}
+                className="col-span-1 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-center"
+              >
+                Txns
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "txCount" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "txCount" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
+              <button
+                onClick={() => handleSort("totalLent")}
+                className="col-span-2 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end"
+              >
+                Total Lent
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "totalLent" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "totalLent" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
+              <button
+                onClick={() => handleSort("totalBorrowed")}
+                className="col-span-2 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end"
+              >
+                Total Borrowed
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "totalBorrowed" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "totalBorrowed" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
+              <button
+                onClick={() => handleSort("highestRate")}
+                className="col-span-1 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end"
+              >
+                Rate
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "highestRate" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "highestRate" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
+              <button
+                onClick={() => handleSort("netBalance")}
+                className="col-span-2 flex items-center gap-1 hover:text-gray-800 dark:hover:text-white transition-colors justify-end"
+              >
+                Net Balance
+                <span className="inline-flex flex-col leading-none">
+                  <svg className={`w-2.5 h-2.5 -mb-0.5 ${sortCol === "netBalance" && sortDir === "asc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 0l5 6H0z"/></svg>
+                  <svg className={`w-2.5 h-2.5 ${sortCol === "netBalance" && sortDir === "desc" ? "text-blue-500" : "text-gray-300 dark:text-slate-600"}`} viewBox="0 0 10 6" fill="currentColor"><path d="M5 6L0 0h10z"/></svg>
+                </span>
+              </button>
               <div className="col-span-1 text-center">Include</div>
             </div>
 
@@ -517,7 +544,7 @@ export default function SummaryPage() {
                 return (
                 <div key={client.id}>
                 <div
-                  className={`grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 items-center transition-colors group ${
+                  className={`grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 items-center transition-colors group min-w-[700px] ${
                     excluded.has(client.id) ? "opacity-40" : ""
                   } ${
                     showDetailedTx
@@ -565,12 +592,12 @@ export default function SummaryPage() {
 
                   {/* Transaction count */}
                   <div className="col-span-1 text-center">
-                    <span className="text-sm text-gray-500 dark:text-slate-400">{txCount}</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-400">{txCount}</span>
                   </div>
 
                   {/* Total lent */}
                   <div className="col-span-2 text-right">
-                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
+                    <span className="text-xs font-medium text-gray-700 dark:text-slate-300 block">
                       {txCount === 0 ? "—" : formatCurrency(totalLent, client.currency)}
                     </span>
                     {txCount > 0 && (
@@ -582,7 +609,7 @@ export default function SummaryPage() {
 
                   {/* Total borrowed */}
                   <div className="col-span-2 text-right">
-                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
+                    <span className="text-xs font-medium text-gray-700 dark:text-slate-300 block">
                       {txCount === 0 ? "—" : formatCurrency(totalBorrowed, client.currency)}
                     </span>
                     {txCount > 0 && (
@@ -594,7 +621,7 @@ export default function SummaryPage() {
 
                   {/* Highest rate */}
                   <div className="col-span-1 text-right">
-                    <span className="text-sm text-gray-600 dark:text-slate-300">
+                    <span className="text-xs text-gray-600 dark:text-slate-300">
                       {txCount === 0 ? "—" : `${highestRate.toFixed(1)}%`}
                     </span>
                   </div>
@@ -602,10 +629,10 @@ export default function SummaryPage() {
                   {/* Net balance */}
                   <div className="col-span-2 text-right">
                     {txCount === 0 ? (
-                      <span className="text-sm text-gray-400 dark:text-slate-500">No data</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500">No data</span>
                     ) : (
                       <span
-                        className={`text-sm font-bold ${
+                        className={`text-xs font-bold ${
                           netBalance > 0
                             ? "text-green-600"
                             : netBalance < 0
@@ -642,7 +669,7 @@ export default function SummaryPage() {
                     ) : (
                       <>
                         {/* Mini header */}
-                        <div className="grid grid-cols-12 gap-3 px-10 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700/60">
+                        <div className="grid grid-cols-12 gap-3 px-10 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700/60 min-w-[700px]">
                           <div className="col-span-2">Date</div>
                           <div className="col-span-1">Type</div>
                           <div className="col-span-2 text-right">Amount</div>
@@ -661,7 +688,7 @@ export default function SummaryPage() {
                             return (
                               <div key={tx.id} className={`border-b border-gray-100 dark:border-slate-700/40 last:border-0 ${tx.completed ? "opacity-50" : ""}` }>
                                 {/* Summary row */}
-                                <div className="grid grid-cols-12 gap-3 px-10 py-2.5 text-xs">
+                                <div className="grid grid-cols-12 gap-3 px-10 py-2.5 text-xs min-w-[700px]">
                                   <div className="col-span-2 text-gray-600 dark:text-slate-400 font-mono">
                                     {tx.date.toLocaleDateString("en-GB")}
                                   </div>
@@ -702,28 +729,28 @@ export default function SummaryPage() {
                                 {calc && !tx.completed && (
                                   <div className="mx-10 mb-3 rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/10 text-xs overflow-hidden">
                                     {/* Duration header */}
-                                    <div className="flex items-center gap-4 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
                                       <span className="font-semibold text-violet-700 dark:text-violet-300">Calculation Breakdown</span>
                                       <span className="text-violet-500 dark:text-violet-400">
                                         {calc.duration.years}y {calc.duration.months}m {calc.duration.days}d
                                       </span>
-                                      <span className="ml-auto font-medium text-gray-600 dark:text-slate-300">
+                                      <span className="sm:ml-auto font-medium text-gray-600 dark:text-slate-300">
                                         Principal: {formatCurrency(calc.originalAmount, client.currency)}
                                       </span>
                                     </div>
 
                                     {/* Compounding steps */}
                                     {calc.compoundingSteps.length > 0 && (
-                                      <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-1">
+                                      <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-2">
                                         <p className="font-semibold text-violet-600 dark:text-violet-400 mb-1">Annual Compounding</p>
                                         {calc.compoundingSteps.map((step, i) => (
-                                          <div key={i} className="flex justify-between text-gray-600 dark:text-slate-300">
-                                            <span>Year {i + 1} ({step.date.toLocaleDateString("en-GB")})</span>
-                                            <span className="font-mono">
+                                          <div key={i} className="text-gray-600 dark:text-slate-300">
+                                            <div className="text-gray-500 dark:text-slate-400 mb-0.5">Year {i + 1} ({step.date.toLocaleDateString("en-GB")})</div>
+                                            <div className="font-mono text-xs break-all">
                                               {formatCurrency(step.principalBefore, client.currency)}
                                               {" × "}{tx.interestRate}% × 12 = +{formatCurrency(step.interest, client.currency)}
                                               {" → "}{formatCurrency(step.principalAfter, client.currency)}
-                                            </span>
+                                            </div>
                                           </div>
                                         ))}
                                       </div>
@@ -770,6 +797,7 @@ export default function SummaryPage() {
               );
             }
             )}
+            </div>{/* end overflow-x-auto */}
           </div>
         )}
       </div>

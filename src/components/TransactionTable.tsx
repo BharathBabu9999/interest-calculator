@@ -140,31 +140,31 @@ type SortColumn =
         <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
           <thead className="bg-gray-50 dark:bg-slate-700/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('date')}>
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('date')}>
                 Date {sortIcon('date')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('type')}>
+              <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('type')}>
                 Type {sortIcon('type')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('amount')}>
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('amount')}>
                 Amount {sortIcon('amount')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('rate')}>
+              <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('rate')}>
                 Rate {sortIcon('rate')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('notes')}>
+              <th className="hidden md:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('notes')}>
                 Notes {sortIcon('notes')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('repaymentDate')}>
+              <th className="hidden lg:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('repaymentDate')}>
                 Reminder Date {sortIcon('repaymentDate')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('currentValue')}>
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('currentValue')}>
                 Current Value {sortIcon('currentValue')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('status')}>
+              <th className="hidden sm:table-cell px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer select-none" onClick={() => handleSort('status')}>
                 Status {sortIcon('status')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-3 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -181,27 +181,28 @@ type SortColumn =
                   <Fragment key={transaction.id}>
                     {/* Normal read-only row dimmed while editing */}
                     <tr className="opacity-40 pointer-events-none select-none">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatDateForDisplay(transaction.date)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatDateForDisplay(transaction.date)}</td>
+                      <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded ${transaction.type === 'lend' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
                           {transaction.type === 'lend' ? 'Lend' : 'Borrow'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatCurrency(transaction.amount, currency)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{transaction.interestRate}%</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">{transaction.notes || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
+                      <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">{formatCurrency(transaction.amount, currency)}</td>
+                      <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{transaction.interestRate}%</td>
+                      <td className="hidden md:table-cell px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">{transaction.notes || '-'}</td>
+                      <td className="hidden lg:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {transaction.reminderDate ? formatDateForDisplay(transaction.reminderDate) : <span className="text-gray-300 dark:text-slate-600">—</span>}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(breakdown.currentValue, currency)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">—</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">—</td>
+                      <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(breakdown.currentValue, currency)}</td>
+                      <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm">—</td>
+                      <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm">—</td>
                     </tr>
 
                     {/* Spacious edit panel */}
                     <tr>
-                      <td colSpan={9} className="px-6 py-5 bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                      <td colSpan={9} className="px-3 py-4 sm:px-6 sm:py-5 bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
+                        <div className="max-w-[calc(100vw-3rem)] sm:max-w-none">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                           <div>
                             <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Date</label>
                             <input
@@ -299,6 +300,7 @@ type SortColumn =
                             Cancel
                           </button>
                         </div>
+                        </div>{/* end max-w constraint */}
                       </td>
                     </tr>
                   </Fragment>
@@ -308,10 +310,10 @@ type SortColumn =
               return (
                 <Fragment key={transaction.id}>
                   <tr className={`hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors ${isCompleted ? 'opacity-50' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white">
                       {formatDateForDisplay(transaction.date)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded ${
                           transaction.type === 'lend'
@@ -322,21 +324,21 @@ type SortColumn =
                         {transaction.type === 'lend' ? 'Lend' : 'Borrow'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 dark:text-white" title={formatCurrency(transaction.amount, currency)}>
                       {formatCurrency(transaction.amount, currency)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {transaction.interestRate}%
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">
+                    <td className="hidden md:table-cell px-3 py-3 sm:px-6 sm:py-4 text-sm text-gray-500 dark:text-slate-400 max-w-xs truncate">
                       {transaction.notes || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
+                    <td className="hidden lg:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                       {transaction.reminderDate
                         ? formatDateForDisplay(transaction.reminderDate)
                         : <span className="text-gray-300 dark:text-slate-600">—</span>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold text-gray-900 dark:text-white" title={formatCurrency(breakdown.currentValue, currency)}>
                       {isCompleted ? (
                         <span className="line-through text-gray-400 dark:text-slate-500">
                           {formatCurrency(breakdown.currentValue, currency)}
@@ -345,7 +347,7 @@ type SortColumn =
                         formatCurrency(breakdown.currentValue, currency)
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
                       <button
                         onClick={() => onToggleCompleted(transaction.id, !transaction.completed)}
                         title={isCompleted ? 'Mark as active' : 'Mark as completed'}
@@ -358,16 +360,16 @@ type SortColumn =
                         {isCompleted ? '✓ Done' : '○ Active'}
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => toggleExpand(transaction.id)}
-                        className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 mr-3"
+                        className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 mr-2 sm:mr-3"
                       >
                         {isExpanded ? 'Hide' : 'Details'}
                       </button>
                       <button
                         onClick={() => startEdit(transaction)}
-                        className="text-yellow-600 hover:text-yellow-800 mr-3"
+                        className="text-yellow-600 hover:text-yellow-800 mr-2 sm:mr-3"
                       >
                         Edit
                       </button>
@@ -381,31 +383,31 @@ type SortColumn =
                   </tr>
                   {(isExpanded || (showDetailCalc && !isCompleted)) && (
                     <tr>
-                      <td colSpan={9} className="px-6 py-0 pb-4 bg-gray-50 dark:bg-slate-700/30">
-                        <div className="rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/10 text-xs overflow-hidden">
+                      <td colSpan={9} className="px-2 py-0 pb-4 sm:px-6 bg-gray-50 dark:bg-slate-700/30">
+                        <div className="rounded-xl border border-violet-200 dark:border-violet-800/50 bg-violet-50 dark:bg-violet-900/10 text-xs overflow-hidden max-w-[calc(100vw-4rem)] sm:max-w-none">
                           {/* Header */}
-                          <div className="flex items-center gap-4 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 bg-violet-100/60 dark:bg-violet-900/20 border-b border-violet-200 dark:border-violet-800/40">
                             <span className="font-semibold text-violet-700 dark:text-violet-300">Calculation Breakdown</span>
                             <span className="text-violet-500 dark:text-violet-400">
                               {breakdown.duration.years}y {breakdown.duration.months}m {breakdown.duration.days}d
                             </span>
-                            <span className="ml-auto font-medium text-gray-600 dark:text-slate-300">
+                            <span className="sm:ml-auto font-medium text-gray-600 dark:text-slate-300">
                               Principal: {formatCurrency(breakdown.originalAmount, currency)}
                             </span>
                           </div>
 
                           {/* Annual Compounding */}
                           {breakdown.compoundingSteps.length > 0 && (
-                            <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-1">
+                            <div className="px-4 py-2 border-b border-violet-200 dark:border-violet-800/40 space-y-2">
                               <p className="font-semibold text-violet-600 dark:text-violet-400 mb-1">Annual Compounding</p>
                               {breakdown.compoundingSteps.map((step, i) => (
-                                <div key={i} className="flex justify-between text-gray-600 dark:text-slate-300">
-                                  <span>Year {i + 1} ({formatDateForDisplay(step.date)})</span>
-                                  <span className="font-mono">
+                                <div key={i} className="text-gray-600 dark:text-slate-300">
+                                  <div className="text-gray-500 dark:text-slate-400 mb-0.5">Year {i + 1} ({formatDateForDisplay(step.date)})</div>
+                                  <div className="font-mono text-xs break-all">
                                     {formatCurrency(step.principalBefore, currency)}
                                     {' × '}{transaction.interestRate}% × 12 = +{formatCurrency(step.interest, currency)}
                                     {' → '}{formatCurrency(step.principalAfter, currency)}
-                                  </span>
+                                  </div>
                                 </div>
                               ))}
                             </div>
