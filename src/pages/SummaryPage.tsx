@@ -193,6 +193,23 @@ export default function SummaryPage() {
     }, {}
   );
 
+  // ── daily totals per type ─────────────────────────────────────────────────
+
+  const dailyByTypeMap = filteredSummaries.reduce<Record<string, Record<string, DailyTotals>>>(
+    (acc, { client, transactions }) => {
+      if (excluded.has(client.id)) return acc;
+      const cur = client.currency;
+      const typ = client.client_type === "financial_institution" ? "Financial Institution" : "Individual";
+      const daily = calculateDailyInterest(transactions, asOfDate);
+      if (!acc[cur]) acc[cur] = {};
+      if (!acc[cur][typ]) acc[cur][typ] = { lent: 0, borrowed: 0, net: 0 };
+      acc[cur][typ].lent += daily.lent;
+      acc[cur][typ].borrowed += daily.borrowed;
+      acc[cur][typ].net += daily.net;
+      return acc;
+    }, {}
+  );
+
   // ── export helpers ──────────────────────────────────────────────────────────
 
   const buildExportRows = (): SummaryExportRow[] =>
@@ -367,7 +384,7 @@ export default function SummaryPage() {
               const typeEntries = Object.entries(typeBreakdown).sort(([a], [b]) => a.localeCompare(b));
               const showBreakdown = clientTypeFilter === "" && typeEntries.length > 1;
 
-              const TotalsCard = ({ label, t, isGrand = false }: { label: string; t: CurrencyTotals; isGrand?: boolean }) => (
+              const TotalsCard = ({ label, t, isGrand = false, daily }: { label: string; t: CurrencyTotals; isGrand?: boolean; daily?: DailyTotals }) => (
                 <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">{label}</span>
@@ -394,6 +411,14 @@ export default function SummaryPage() {
                         {formatCurrency(t.net, currency)}
                       </span>
                     </div>
+                    {showDailyValue && daily && (
+                      <div className="flex justify-between gap-2 mt-1">
+                        <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0">Approx. Daily Interest</span>
+                        <span className={`text-xs font-semibold ${daily.net >= 0 ? "text-green-500" : "text-red-500"}`}>
+                          {daily.net >= 0 ? "+" : ""}{formatCurrency(daily.net, currency)}/day
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -403,15 +428,16 @@ export default function SummaryPage() {
                   {showBreakdown ? (
                     <>
                       {typeEntries.map(([typeName, t]) => (
-                        <TotalsCard key={typeName} label={typeName} t={t} />
+                        <TotalsCard key={typeName} label={typeName} t={t} daily={dailyByTypeMap[currency]?.[typeName]} />
                       ))}
-                      <TotalsCard label="Grand Total" t={totals} isGrand />
+                      <TotalsCard label="Grand Total" t={totals} isGrand daily={dailyTotalsMap[currency]} />
                     </>
                   ) : (
                     <TotalsCard
                       label={clientTypeFilter === "financial_institution" ? "Financial Institution" : clientTypeFilter === "individual" ? "Individual" : "Grand Total"}
                       t={totals}
                       isGrand
+                      daily={dailyTotalsMap[currency]}
                     />
                   )}
                 </div>

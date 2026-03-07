@@ -14,8 +14,12 @@ const currencySymbols: Record<string, string> = {
 
 export function formatCurrency(amount: number, currency: string): string {
   const symbol = currencySymbols[currency] || currency;
-  // Always show 2 decimal places for better precision
-  return `${symbol}${amount.toFixed(2)}`;
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  const formatted = Math.abs(amount).toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${amount < 0 ? '-' : ''}${symbol}${formatted}`;
 }
 
 export function getCurrencySymbol(currency: string): string {
