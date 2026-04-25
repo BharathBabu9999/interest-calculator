@@ -11,6 +11,7 @@ export interface ClientRead {
   email: string | null;
   address: string | null;
   company: string | null;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -34,6 +35,7 @@ export interface ClientUpdate {
   email?: string;
   address?: string;
   company?: string;
+  is_active?: boolean;
 }
 
 export const clientsApi = {

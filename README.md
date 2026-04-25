@@ -14,11 +14,12 @@ A full-stack React + FastAPI application for managing private financing — trac
 ### Client Management
 - **Multiple clients per user** — add as many borrowers/lenders as needed
 - **Client type** — classify each client as **Individual** or **Financial Institution**; filterable on the dashboard and portfolio summary
+- **Active / Inactive toggle** — each client page has an **Active/Inactive** pill next to the client name; inactive clients are hidden from the Portfolio Summary; toggle persists to the database (`is_active` column)
 - **Per-client currency** — each client can have a different currency (INR, USD, EUR, GBP, JPY, AUD, CAD)
 - **Contact details** — store phone, email, address, and company per client
 - **Editable notes** — attach and edit free-text notes on each client page
 - **File attachments** — upload documents (images, PDF, Word, Excel, PowerPoint, CSV) per client with thumbnail previews, upload date/time, and per-file descriptions; images larger than 3 MB are automatically compressed client-side before upload
-- **Full CRUD** — create, edit, and delete clients from the dashboard (delete requires confirmation in a warning modal)
+- **Full CRUD** — create, edit, and delete clients from the dashboard (delete requires confirmation in a warning modal); inactive clients show an **Inactive** badge on their dashboard card
 
 ### Transaction Tracking (per client)
 - **Add Transaction overlay** — when adding a transaction, an overlay appears with a spinner and message until the operation completes
@@ -30,7 +31,7 @@ A full-stack React + FastAPI application for managing private financing — trac
 - **Daily Value toggle** — a blue toggle button shows an Approximate Daily Interest card above the summary, displaying lent/borrowed/net daily accrual computed as `(balance at +30 days − current balance) ÷ 30` with 2-decimal precision
 
 ### Portfolio Summary
-- **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view
+- **Cross-client overview** — see total lent, total borrowed, and net balance across all clients in one view; **inactive clients are automatically excluded**
 - **As-of-date filter** — recalculate all balances as of any date
 - **Filters** — filter by client type (Individual / Financial Institution) and net balance (greater/less than an amount)
 - **Sortable columns** — sort by client name, type, transaction count, total lent, total borrowed, net balance, or highest rate

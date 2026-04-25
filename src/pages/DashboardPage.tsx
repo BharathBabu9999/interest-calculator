@@ -326,6 +326,11 @@ export default function DashboardPage() {
                     <span className="inline-block mt-1 ml-1 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5">
                       {client.client_type === "financial_institution" ? "Financial Institution" : "Individual"}
                     </span>
+                    {!client.is_active && (
+                      <span className="inline-block mt-1 ml-1 text-xs font-medium bg-gray-200 dark:bg-slate-600 text-gray-500 dark:text-slate-400 rounded-full px-2 py-0.5">
+                        Inactive
+                      </span>
+                    )}
                   </div>
                   {/* Actions */}
                   <div

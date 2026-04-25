@@ -25,12 +25,12 @@ function loadGuestClient(): Client {
     const raw = localStorage.getItem(GUEST_CLIENT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Client;
-      return { ...parsed, clientType: parsed.clientType ?? "individual" };
+      return { ...parsed, clientType: parsed.clientType ?? "individual", isActive: parsed.isActive ?? true };
     }
   } catch {
     // ignore
   }
-  return { name: "Guest Client", id: "GUEST-001", currency: "INR", clientType: "individual" };
+  return { name: "Guest Client", id: "GUEST-001", currency: "INR", clientType: "individual", isActive: true };
 }
 
 function loadGuestTransactions(): Transaction[] {

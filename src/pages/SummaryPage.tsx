@@ -74,17 +74,20 @@ export default function SummaryPage() {
     setError(null);
     try {
       const clients = await clientsApi.list();
-      if (clients.length === 0) {
+
+      // Only include active clients
+      const activeClients = clients.filter((c) => c.is_active);
+      if (activeClients.length === 0) {
         setSummaries([]);
         return;
       }
 
       // Fetch all clients' transactions in parallel
       const txLists = await Promise.all(
-        clients.map((c) => transactionsApi.list(c.id))
+        activeClients.map((c) => transactionsApi.list(c.id))
       );
 
-      const result: ClientSummary[] = clients.map((client, i) => {
+      const result: ClientSummary[] = activeClients.map((client, i) => {
         const transactions = txLists[i].map(apiTransactionToLocal);
         const { totalLent, totalBorrowed, netBalance, principalLent, principalBorrowed } =
           calculateTotalBalance(transactions, asOfDate);

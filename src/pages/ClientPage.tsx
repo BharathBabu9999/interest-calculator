@@ -63,7 +63,7 @@ export default function ClientPage() {
         clientsApi.get(clientId),
         transactionsApi.list(clientId),
       ]);
-      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, clientType: clientData.client_type, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company });
+      setClient({ id: clientData.id, name: clientData.name, currency: clientData.currency, clientType: clientData.client_type, notes: clientData.notes, phone: clientData.phone, email: clientData.email, address: clientData.address, company: clientData.company, isActive: clientData.is_active });
       setNotesDraft(clientData.notes ?? "");
       setTransactions(txData.map(apiTransactionToLocal));
     } catch (err) {
@@ -279,10 +279,28 @@ export default function ClientPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page heading */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+        <div className="mb-8 flex items-center gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             {client?.name ?? "Client"}
           </h1>
+          {client && (
+            <button
+              onClick={async () => {
+                if (!clientId) return;
+                const updated = await clientsApi.update(clientId, { is_active: !client.isActive });
+                setClient((prev) => prev ? { ...prev, isActive: updated.is_active } : prev);
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                client.isActive
+                  ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 dark:hover:bg-green-900/60"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600"
+              }`}
+              title={client.isActive ? "Click to deactivate (hides from Portfolio Summary)" : "Click to activate"}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${client.isActive ? "bg-green-500" : "bg-gray-400"}`} />
+              {client.isActive ? "Active" : "Inactive"}
+            </button>
+          )}
         </div>
 
         {/* As of Date */}

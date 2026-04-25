@@ -21,6 +21,7 @@ export interface Client {
   email?: string | null;
   address?: string | null;
   company?: string | null;
+  isActive: boolean;
 }
 
 export interface CalculationBreakdown {

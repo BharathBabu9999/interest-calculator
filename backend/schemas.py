@@ -51,6 +51,7 @@ class ClientCreate(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     company: Optional[str] = None
+    is_active: bool = True
 
 
 class ClientUpdate(BaseModel):
@@ -62,6 +63,7 @@ class ClientUpdate(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     company: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class ClientRead(BaseModel):
@@ -74,6 +76,7 @@ class ClientRead(BaseModel):
     email: Optional[str]
     address: Optional[str]
     company: Optional[str]
+    is_active: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
